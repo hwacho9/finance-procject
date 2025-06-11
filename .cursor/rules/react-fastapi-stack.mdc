@@ -1,0 +1,596 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# React + FastAPI Development Guidelines
+
+## Project Architecture Overview
+
+### Tech Stack
+- **Frontend**: React with TypeScript
+- **Backend**: FastAPI with Python
+- **Testing**: React Testing Library + Jest (Frontend), pytest (Backend)
+- **State Management**: React Context API / Zustand / Redux Toolkit
+- **Styling**: Tailwind CSS / Styled Components
+- **Database**: SQLite (development)
+- **ORM**: SQLAlchemy with Alembic migrations
+
+## Frontend (React) Development Rules
+
+### 1. Component Structure
+- **Functional Components Only**: Use function components with hooks
+- **Component Naming**: PascalCase for components, camelCase for variables
+- **File Organization**: One component per file, match filename with component name
+- **Props Interface**: Always define TypeScript interfaces for props
+
+```tsx
+// ✅ Good
+interface UserCardProps {
+  user: User;
+  onEdit: (id: string) => void;
+}
+
+export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
+  // component logic
+};
+```
+
+### 2. Hooks Guidelines
+- **Custom Hooks**: Extract reusable logic into custom hooks with `use` prefix
+- **Hook Dependencies**: Always include all dependencies in useEffect arrays
+- **State Management**: Prefer useState for local state, Context for shared state
+- **Performance**: Use useMemo, useCallback for expensive computations
+
+```tsx
+// ✅ Custom Hook Example
+const useApi = <T>(url: string) => {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // hook logic
+  return { data, loading, error };
+};
+```
+
+### 3. Testing Standards
+- **Test Location**: `__tests__` folder or `.test.tsx` files alongside components
+- **Testing Library**: Use React Testing Library, not Enzyme
+- **Test Coverage**: Aim for 80%+ component coverage
+- **Test Naming**: Describe behavior, not implementation
+
+```tsx
+// ✅ Good Test Example
+describe('UserCard', () => {
+  test('should display user name and email', () => {
+    const mockUser = { id: '1', name: 'John', email: 'john@test.com' };
+    render(<UserCard user={mockUser} onEdit={jest.fn()} />);
+    
+    expect(screen.getByText('John')).toBeInTheDocument();
+    expect(screen.getByText('john@test.com')).toBeInTheDocument();
+  });
+});
+```
+
+### 4. Folder Structure
+```
+src/
+├── components/           # Reusable UI components
+│   ├── common/          # Generic components (Button, Input)
+│   └── specific/        # Domain-specific components
+├── pages/               # Route components
+├── hooks/               # Custom hooks
+├── services/            # API calls and external services
+├── types/               # TypeScript type definitions
+├── utils/               # Utility functions
+├── stores/              # State management
+└── __tests__/           # Global test utilities
+```
+
+### 5. State Management Rules
+- **Local State**: Use useState for component-specific state
+- **Shared State**: Use React Context for app-wide state
+- **Complex State**: Consider Zustand or Redux Toolkit for complex state logic
+- **Server State**: Use React Query / SWR for server state management
+
+## Backend (FastAPI) Development Rules
+
+### 1. Project Structure
+```
+app/
+├── api/                 # API route definitions
+│   ├── v1/             # API version 1
+│   └── dependencies/    # Dependency injection
+├── core/               # Core application settings
+├── models/             # SQLAlchemy models
+├── schemas/            # Pydantic schemas
+├── services/           # Business logic
+├── repositories/       # Data access layer
+├── tests/              # Test files
+└── main.py             # FastAPI app entry point
+```
+
+### 2. API Design Standards
+- **Route Organization**: Group related routes in separate router files
+- **HTTP Methods**: Use appropriate HTTP verbs (GET, POST, PUT, DELETE)
+- **Status Codes**: Return proper HTTP status codes
+- **Response Models**: Always define Pydantic response models
+
+```python
+# ✅ Good Router Example
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_data: UserCreate,
+    db: Session = Depends(get_db)
+) -> UserResponse:
+    return await user_service.create_user(db, user_data)
+```
+
+### 3. Pydantic Schema Guidelines
+- **Input/Output Separation**: Separate schemas for create, update, and response
+- **Validation**: Use Pydantic validators for complex validation logic
+- **Documentation**: Add docstrings and field descriptions
+- **Inheritance**: Use inheritance for common fields
+
+```python
+# ✅ Good Schema Example
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
+from datetime import datetime
+
+class UserBase(BaseModel):
+    email: EmailStr = Field(..., description="User email address")
+    name: str = Field(..., min_length=1, max_length=100)
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
+
+class UserResponse(UserBase):
+    id: int
+    created_at: datetime
+    is_active: bool
+    
+    class Config:
+        from_attributes = True
+```
+
+### 4. Dependency Injection
+- **Database Sessions**: Use dependency injection for database sessions
+- **Authentication**: Inject current user through dependencies
+- **Services**: Inject service classes for business logic
+- **Configuration**: Inject settings through dependencies
+
+```python
+# ✅ Dependency Examples
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session() as session:
+        yield session
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    # authentication logic
+    return user
+```
+
+### 5. Testing Standards
+- **Test Framework**: Use pytest with async support
+- **Test Database**: Use separate test database or in-memory SQLite
+- **Fixtures**: Create reusable pytest fixtures
+- **API Testing**: Test API endpoints with TestClient
+
+```python
+# ✅ Good Test Example
+import pytest
+from httpx import AsyncClient
+from app.main import app
+
+@pytest.mark.asyncio
+async def test_create_user():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/users/",
+            json={"email": "test@example.com", "name": "Test User", "password": "password123"}
+        )
+    
+    assert response.status_code == 201
+    assert response.json()["email"] == "test@example.com"
+```
+
+## Full-Stack Integration Rules
+
+### 1. API Communication
+- **Type Safety**: Generate TypeScript types from FastAPI OpenAPI schema
+- **Error Handling**: Consistent error response format between frontend and backend
+- **Loading States**: Handle loading, success, and error states in React
+- **API Client**: Use a centralized API client (axios/fetch wrapper)
+
+```typescript
+// ✅ API Client Example
+class ApiClient {
+  private baseURL: string;
+  
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
+  }
+  
+  async post<T>(endpoint: string, data: any): Promise<T> {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      throw new ApiError(response.status, await response.json());
+    }
+    
+    return response.json();
+  }
+}
+```
+
+### 2. Authentication & Security
+- **JWT Tokens**: Use JWT for authentication with proper expiration
+- **CORS**: Configure CORS properly in FastAPI
+- **Input Validation**: Validate all inputs on both frontend and backend
+- **Environment Variables**: Use environment variables for sensitive data
+
+### 3. Development Workflow
+- **Hot Reload**: Use development servers with hot reload (Vite + uvicorn --reload)
+- **API Documentation**: Auto-generated docs available at `/docs`
+- **Database Migrations**: Use Alembic for database schema changes
+- **Code Formatting**: Use Black (Python) and Prettier (TypeScript)
+
+### 4. Performance Guidelines
+- **React Optimization**: Use React.memo, useMemo, useCallback appropriately
+- **API Optimization**: Implement pagination, filtering, and caching
+- **Database Queries**: Use eager loading and query optimization
+- **Bundle Size**: Monitor and optimize frontend bundle size
+
+### 5. Error Handling Patterns
+- **Frontend**: Global error boundary + local error states
+- **Backend**: Custom exception handlers with proper HTTP status codes
+- **Logging**: Structured logging with appropriate log levels
+- **User Feedback**: User-friendly error messages
+
+```python
+# ✅ Backend Error Handling
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse
+
+class CustomException(Exception):
+    def __init__(self, status_code: int, detail: str):
+        self.status_code = status_code
+        self.detail = detail
+
+@app.exception_handler(CustomException)
+async def custom_exception_handler(request: Request, exc: CustomException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "type": "custom_error"}
+    )
+```
+
+## Development Environment Setup
+
+### 1. Docker-based Development Environment
+
+#### Prerequisites
+- **Docker**: Version 20.10+ with Docker Compose
+- **Git**: For version control
+- **VS Code**: Recommended with Docker extension
+
+#### Project Structure
+```
+macro-finance/
+├── docker-compose.yml              # Multi-service orchestration
+├── docker-compose.override.yml     # Development overrides
+├── .env.example                    # Environment variables template
+├── frontend/
+│   ├── Dockerfile                  # React development container
+│   ├── package.json
+│   └── src/
+├── backend/
+│   ├── Dockerfile                  # FastAPI development container
+│   ├── requirements.txt
+│   └── app/
+└── database/
+    └── init.sql                    # Database initialization scripts
+```
+
+#### Docker Configuration
+
+##### Frontend Dockerfile (frontend/Dockerfile)
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Development command with hot reload
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+```
+
+##### Backend Dockerfile (backend/Dockerfile)
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 8000
+
+# Development command with hot reload
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+```
+
+##### Docker Compose (docker-compose.yml)
+```yaml
+version: '3.8'
+
+services:
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/macro_finance
+      - CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=macro_finance
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+```
+
+##### Development Override (docker-compose.override.yml)
+```yaml
+version: '3.8'
+
+services:
+  frontend:
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true  # For better file watching in Docker
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  backend:
+    environment:
+      - DEBUG=True
+      - LOG_LEVEL=debug
+    volumes:
+      - ./backend:/app
+```
+
+### 2. Development Commands
+
+#### Initial Setup
+```bash
+# Clone repository
+git clone <repository-url>
+cd macro-finance
+
+# Copy environment variables
+cp .env.example .env
+
+# Build and start all services
+docker-compose up --build
+
+# Run in detached mode
+docker-compose up -d
+```
+
+#### Daily Development
+```bash
+# Start all services
+docker-compose up
+
+# Start specific service
+docker-compose up frontend backend
+
+# View logs
+docker-compose logs -f backend
+docker-compose logs -f frontend
+
+# Stop all services
+docker-compose down
+
+# Rebuild specific service
+docker-compose up --build backend
+```
+
+#### Database Operations
+```bash
+# Run database migrations
+docker-compose exec backend alembic upgrade head
+
+# Create new migration
+docker-compose exec backend alembic revision --autogenerate -m "description"
+
+# Access database shell
+docker-compose exec db psql -U postgres -d macro_finance
+
+# Reset database
+docker-compose down -v
+docker-compose up db
+```
+
+#### Testing
+```bash
+# Run frontend tests
+docker-compose exec frontend npm test
+
+# Run backend tests
+docker-compose exec backend pytest
+
+# Run tests with coverage
+docker-compose exec backend pytest --cov=app
+
+# Run specific test file
+docker-compose exec backend pytest tests/test_users.py
+```
+
+#### Package Management
+```bash
+# Install new frontend package
+docker-compose exec frontend npm install <package-name>
+
+# Install new backend package
+docker-compose exec backend pip install <package-name>
+# Then update requirements.txt
+docker-compose exec backend pip freeze > requirements.txt
+```
+
+### 3. Development Workflow
+
+#### Environment Variables (.env)
+```bash
+# Database
+DATABASE_URL=postgresql://postgres:postgres@db:5432/macro_finance
+POSTGRES_DB=macro_finance
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+
+# Backend
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+CORS_ORIGINS=http://localhost:3000
+
+# Frontend
+REACT_APP_API_URL=http://localhost:8000
+REACT_APP_ENV=development
+```
+
+#### Hot Reload Configuration
+- **Frontend**: Vite with Docker volumes for instant file changes
+- **Backend**: uvicorn --reload with volume mounting
+- **Database**: Persistent volumes for data retention
+
+#### Code Quality Tools
+```bash
+# Frontend linting and formatting
+docker-compose exec frontend npm run lint
+docker-compose exec frontend npm run format
+
+# Backend linting and formatting
+docker-compose exec backend black .
+docker-compose exec backend isort .
+docker-compose exec backend flake8
+```
+
+### 4. Production Considerations
+
+#### Multi-stage Dockerfiles
+```dockerfile
+# Production frontend Dockerfile
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+```
+
+#### Docker Compose Production
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "80:80"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=${DATABASE_URL}
+```
+
+### 5. Git Workflow
+- **Conventional Commits**: Use conventional commit format
+- **Feature Branches**: Create feature branches from main
+- **Pull Requests**: Require code review before merging
+- **CI/CD**: Run tests and linting on every PR using Docker containers
+
+This guide ensures consistent development practices across the React frontend and FastAPI backend, promoting maintainable, testable, and scalable code.

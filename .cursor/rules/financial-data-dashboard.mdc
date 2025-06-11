@@ -1,0 +1,778 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Financial Data Dashboard Development Guide
+
+## Project Overview
+
+### Macro Finance Dashboard
+A comprehensive financial data visualization platform displaying real-time market data, economic indicators, and providing extensible architecture for database integration, AI services, and payment processing.
+
+### Core Features
+- **Real-time Financial Data Display**: Market indices, bonds, commodities, currencies
+- **Economic Indicators Dashboard**: Macroeconomic data visualization  
+- **Extensible Architecture**: Ready for database integration and AI services
+- **Payment Integration**: Stripe-ready subscription system
+- **Responsive Design**: Mobile-first financial data presentation
+
+## 1. Financial Data Structure
+
+### 1.1 Market Indices (Stock Market)
+
+#### US Major Indices
+```typescript
+interface USMarketIndices {
+  djia: MarketIndex;           // Dow Jones Industrial Average
+  sp500: MarketIndex;          // S&P 500
+  nasdaq: MarketIndex;         // NASDAQ Composite
+  russell2000: MarketIndex;    // Russell 2000
+  phlxSox: MarketIndex;        // Philadelphia Semiconductor Index
+}
+
+interface MarketIndex {
+  symbol: string;
+  name: string;
+  currentValue: number;
+  change: number;
+  changePercent: number;
+  timestamp: string;
+  marketStatus: 'open' | 'closed' | 'pre-market' | 'after-hours';
+}
+```
+
+#### European Major Indices
+```typescript
+interface EuropeanIndices {
+  euroStoxx50: MarketIndex;    // Euro Stoxx 50
+  ftse100: MarketIndex;        // FTSE 100 (UK)
+  dax: MarketIndex;            // DAX (Germany)
+  cac40: MarketIndex;          // CAC 40 (France)
+  ibex35: MarketIndex;         // IBEX 35 (Spain)
+}
+```
+
+#### Asia-Pacific Indices
+```typescript
+interface AsiaPacificIndices {
+  nikkei225: MarketIndex;      // Nikkei 225 (Japan)
+  topix: MarketIndex;          // TOPIX (Japan)
+  shanghaiComposite: MarketIndex; // Shanghai Composite (China)
+  hangSeng: MarketIndex;       // Hang Seng (Hong Kong)
+  kospi: MarketIndex;          // KOSPI (Korea)
+  kosdaq: MarketIndex;         // KOSDAQ (Korea)
+  asx200: MarketIndex;         // S&P/ASX 200 (Australia)
+}
+```
+
+#### Sector & Thematic Indices
+```typescript
+interface SectorIndices {
+  sp500Sectors: {
+    energy: MarketIndex;
+    technology: MarketIndex;
+    healthcare: MarketIndex;
+    financials: MarketIndex;
+    utilities: MarketIndex;
+    industrials: MarketIndex;
+    consumerDiscretionary: MarketIndex;
+    consumerStaples: MarketIndex;
+    realEstate: MarketIndex;
+    materials: MarketIndex;
+    communicationServices: MarketIndex;
+  };
+  nasdaq100: MarketIndex;
+  msciSectors: MarketIndex[];
+}
+```
+
+### 1.2 Bond & Yield Indices
+
+```typescript
+interface BondYieldData {
+  treasuryYields: {
+    year2: YieldData;          // 2-Year Treasury
+    year5: YieldData;          // 5-Year Treasury
+    year10: YieldData;         // 10-Year Treasury
+    year30: YieldData;         // 30-Year Treasury
+  };
+  corporateBonds: {
+    iceBofaUS: BondIndex;      // ICE BofA US Corporate Index
+    bloombergGlobal: BondIndex; // Bloomberg Global Bond Index
+  };
+  creditSpreads: {
+    highYieldSpread: number;
+    investmentGradeSpread: number;
+  };
+}
+
+interface YieldData {
+  rate: number;
+  change: number;
+  timestamp: string;
+}
+```
+
+### 1.3 Volatility Indices
+
+```typescript
+interface VolatilityIndices {
+  cboeVix: VolatilityIndex;    // CBOE VIX (US)
+  vxn: VolatilityIndex;        // NASDAQ Volatility
+  vstoxx: VolatilityIndex;     // European Volatility
+  vkospi: VolatilityIndex;     // Korean Volatility
+}
+
+interface VolatilityIndex {
+  symbol: string;
+  value: number;
+  change: number;
+  level: 'low' | 'medium' | 'high' | 'extreme';
+  timestamp: string;
+}
+```
+
+### 1.4 Commodity Indices
+
+```typescript
+interface CommodityData {
+  broadIndices: {
+    spGsci: CommodityIndex;        // S&P GSCI
+    bloombergCommodity: CommodityIndex; // Bloomberg Commodity Index
+  };
+  energy: {
+    wtiCrude: CommodityPrice;      // WTI Crude Oil
+    brentCrude: CommodityPrice;    // Brent Crude Oil
+    naturalGas: CommodityPrice;
+  };
+  metals: {
+    gold: CommodityPrice;          // Gold Spot Price
+    silver: CommodityPrice;
+    copper: CommodityPrice;
+  };
+  agricultural: CommodityPrice[];
+}
+```
+
+### 1.5 Currency Indices
+
+```typescript
+interface CurrencyData {
+  majorPairs: {
+    dxy: CurrencyIndex;          // US Dollar Index
+    eurUsd: CurrencyPair;        // EUR/USD
+    usdJpy: CurrencyPair;        // USD/JPY
+    gbpUsd: CurrencyPair;        // GBP/USD
+  };
+  emergingMarkets: {
+    emCurrencyIndex: CurrencyIndex;
+    majorEmPairs: CurrencyPair[];
+  };
+}
+```
+
+### 1.6 Macroeconomic Indicators
+
+```typescript
+interface MacroeconomicData {
+  leadingIndicators: {
+    leiOecd: EconomicIndicator;     // OECD Leading Economic Index
+    leiConferenceBoard: EconomicIndicator; // Conference Board LEI
+  };
+  businessActivity: {
+    manufacturingPmi: PMIData;      // Manufacturing PMI
+    servicesPmi: PMIData;           // Services PMI
+    ismManufacturing: PMIData;      // ISM Manufacturing
+    ismServices: PMIData;           // ISM Services
+  };
+  consumerSentiment: {
+    consumerConfidence: EconomicIndicator; // Consumer Confidence Index
+    consumerExpectations: EconomicIndicator;
+    businessConfidence: EconomicIndicator;
+  };
+  housing: {
+    housingStarts: EconomicIndicator;
+    existingHomeSales: EconomicIndicator;
+    newHomeSales: EconomicIndicator;
+  };
+  inflation: {
+    cpi: InflationData;             // Consumer Price Index
+    ppi: InflationData;             // Producer Price Index
+    coreCpi: InflationData;         // Core CPI
+    corePpi: InflationData;         // Core PPI
+  };
+  employment: {
+    unemploymentRate: EconomicIndicator;
+    nonfarmPayrolls: EconomicIndicator;
+    averageHourlyEarnings: EconomicIndicator;
+  };
+  monetary: {
+    m2MoneySupply: EconomicIndicator;
+    fedFundsRate: InterestRate;
+    tedSpread: EconomicIndicator;
+    sofr: InterestRate;
+  };
+  financialStability: {
+    yieldCurveSlope: EconomicIndicator;
+    financialStressIndex: EconomicIndicator;
+    creditDefaultSwaps: CreditData[];
+  };
+}
+```
+
+## 2. Frontend Components Architecture
+
+### 2.1 Dashboard Layout Components
+
+```tsx
+// Main Dashboard Container
+interface DashboardProps {
+  user?: User;
+  subscription?: SubscriptionTier;
+}
+
+export const MainDashboard: React.FC<DashboardProps> = ({ user, subscription }) => {
+  return (
+    <div className="dashboard-container">
+      <DashboardHeader user={user} subscription={subscription} />
+      <DashboardSidebar />
+      <MainContent>
+        <MarketOverview />
+        <EconomicIndicators />
+        <VolatilityMetrics />
+        <CommoditiesSection />
+        <CurrencyMarkets />
+      </MainContent>
+    </div>
+  );
+};
+
+// Market Overview Widget
+export const MarketOverview: React.FC = () => {
+  const { data: marketData, loading, error } = useMarketData();
+  
+  return (
+    <DashboardWidget title="Market Overview">
+      <MarketIndicesGrid data={marketData?.indices} />
+      <SectorPerformance data={marketData?.sectors} />
+    </DashboardWidget>
+  );
+};
+
+// Economic Indicators Widget
+export const EconomicIndicators: React.FC = () => {
+  const { data: ecoData } = useEconomicData();
+  
+  return (
+    <DashboardWidget title="Economic Indicators">
+      <PMIChart data={ecoData?.pmi} />
+      <InflationMetrics data={ecoData?.inflation} />
+      <EmploymentData data={ecoData?.employment} />
+    </DashboardWidget>
+  );
+};
+```
+
+### 2.2 Data Visualization Components
+
+```tsx
+// Reusable Chart Components
+interface ChartProps<T> {
+  data: T[];
+  config: ChartConfig;
+  height?: number;
+  width?: number;
+}
+
+export const LineChart: React.FC<ChartProps<TimeSeriesData>> = ({ data, config }) => {
+  // Implementation using recharts or d3
+};
+
+export const CandlestickChart: React.FC<ChartProps<OHLCData>> = ({ data, config }) => {
+  // Implementation for financial candlestick charts
+};
+
+export const HeatMap: React.FC<ChartProps<SectorData>> = ({ data, config }) => {
+  // Sector performance heatmap
+};
+
+// Market Data Cards
+interface MarketCardProps {
+  index: MarketIndex;
+  trend?: 'up' | 'down' | 'neutral';
+}
+
+export const MarketIndexCard: React.FC<MarketCardProps> = ({ index, trend }) => {
+  return (
+    <Card className={`market-card ${trend}`}>
+      <CardHeader>
+        <h3>{index.name}</h3>
+        <span className="symbol">{index.symbol}</span>
+      </CardHeader>
+      <CardContent>
+        <div className="current-value">{index.currentValue.toLocaleString()}</div>
+        <div className="change">
+          <span className={index.change >= 0 ? 'positive' : 'negative'}>
+            {index.change > 0 ? '+' : ''}{index.change.toFixed(2)} ({index.changePercent.toFixed(2)}%)
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+```
+
+## 3. Backend API Architecture
+
+### 3.1 FastAPI Routers
+
+```python
+# Market Data Router
+from fastapi import APIRouter, Depends, HTTPException
+from app.services.market_data_service import MarketDataService
+from app.schemas.market_schemas import MarketIndicesResponse
+
+router = APIRouter(prefix="/api/v1/market", tags=["market-data"])
+
+@router.get("/indices", response_model=MarketIndicesResponse)
+async def get_market_indices(
+    region: Optional[str] = None,
+    market_data_service: MarketDataService = Depends()
+) -> MarketIndicesResponse:
+    """Get current market indices data"""
+    return await market_data_service.get_indices(region)
+
+@router.get("/indices/{symbol}")
+async def get_index_detail(
+    symbol: str,
+    period: str = "1d",
+    market_data_service: MarketDataService = Depends()
+):
+    """Get detailed data for specific market index"""
+    return await market_data_service.get_index_detail(symbol, period)
+
+# Economic Data Router
+@router.get("/economic/indicators")
+async def get_economic_indicators(
+    category: Optional[str] = None,
+    economic_service: EconomicDataService = Depends()
+):
+    """Get macroeconomic indicators"""
+    return await economic_service.get_indicators(category)
+```
+
+### 3.2 Data Service Layer
+
+```python
+# Market Data Service
+from abc import ABC, abstractmethod
+from typing import List, Optional
+from app.external.market_data_providers import AlphaVantageProvider, YFinanceProvider
+
+class MarketDataService:
+    def __init__(self, provider: MarketDataProvider):
+        self.provider = provider
+        
+    async def get_indices(self, region: Optional[str] = None) -> MarketIndicesResponse:
+        """Fetch market indices data from external provider"""
+        raw_data = await self.provider.get_indices(region)
+        return self._transform_indices_data(raw_data)
+    
+    async def get_real_time_quote(self, symbol: str) -> QuoteData:
+        """Get real-time quote for specific symbol"""
+        return await self.provider.get_quote(symbol)
+    
+    def _transform_indices_data(self, raw_data) -> MarketIndicesResponse:
+        """Transform external API data to internal format"""
+        # Data transformation logic
+        pass
+
+# Economic Data Service
+class EconomicDataService:
+    def __init__(self, fed_provider: FREDProvider, oecd_provider: OECDProvider):
+        self.fed_provider = fed_provider
+        self.oecd_provider = oecd_provider
+    
+    async def get_indicators(self, category: Optional[str] = None) -> EconomicIndicatorsResponse:
+        """Fetch economic indicators from multiple sources"""
+        # Combine data from FRED, OECD, etc.
+        pass
+```
+
+### 3.3 External Data Providers
+
+```python
+# Abstract Data Provider Interface
+class MarketDataProvider(ABC):
+    @abstractmethod
+    async def get_indices(self, region: str) -> dict:
+        pass
+    
+    @abstractmethod
+    async def get_quote(self, symbol: str) -> dict:
+        pass
+
+# Alpha Vantage Implementation
+class AlphaVantageProvider(MarketDataProvider):
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.base_url = "https://www.alphavantage.co/query"
+    
+    async def get_indices(self, region: str) -> dict:
+        # Alpha Vantage API implementation
+        pass
+
+# Yahoo Finance Implementation  
+class YFinanceProvider(MarketDataProvider):
+    async def get_indices(self, region: str) -> dict:
+        # Yahoo Finance API implementation
+        pass
+
+# FRED (Federal Reserve Economic Data) Provider
+class FREDProvider:
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.base_url = "https://api.stlouisfed.org/fred"
+    
+    async def get_economic_series(self, series_id: str) -> dict:
+        # FRED API implementation for economic data
+        pass
+```
+
+## 4. Database Architecture (Future Extension)
+
+### 4.1 Database Models
+
+```python
+# SQLAlchemy Models for Financial Data
+from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean
+from app.core.database import Base
+
+class MarketIndex(Base):
+    __tablename__ = "market_indices"
+    
+    id = Column(Integer, primary_key=True)
+    symbol = Column(String(20), unique=True, index=True)
+    name = Column(String(200))
+    current_value = Column(Float)
+    change = Column(Float)
+    change_percent = Column(Float)
+    market_cap = Column(Float, nullable=True)
+    timestamp = Column(DateTime)
+    region = Column(String(50))
+    sector = Column(String(100), nullable=True)
+
+class EconomicIndicator(Base):
+    __tablename__ = "economic_indicators"
+    
+    id = Column(Integer, primary_key=True)
+    indicator_code = Column(String(50), index=True)
+    name = Column(String(200))
+    value = Column(Float)
+    previous_value = Column(Float, nullable=True)
+    unit = Column(String(50))
+    frequency = Column(String(20))  # daily, weekly, monthly, quarterly
+    source = Column(String(100))
+    timestamp = Column(DateTime)
+    country = Column(String(50))
+
+class UserWatchlist(Base):
+    __tablename__ = "user_watchlists"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    symbol = Column(String(20))
+    added_at = Column(DateTime)
+    alerts_enabled = Column(Boolean, default=False)
+    alert_threshold = Column(Float, nullable=True)
+```
+
+### 4.2 Data Caching Strategy
+
+```python
+# Redis Caching for Real-time Data
+from redis import Redis
+import json
+from typing import Optional
+
+class MarketDataCache:
+    def __init__(self, redis_client: Redis):
+        self.redis = redis_client
+        self.ttl = 60  # 1 minute TTL for market data
+    
+    async def get_market_data(self, key: str) -> Optional[dict]:
+        """Get cached market data"""
+        cached_data = await self.redis.get(f"market:{key}")
+        return json.loads(cached_data) if cached_data else None
+    
+    async def set_market_data(self, key: str, data: dict) -> None:
+        """Cache market data with TTL"""
+        await self.redis.setex(
+            f"market:{key}", 
+            self.ttl, 
+            json.dumps(data)
+        )
+```
+
+## 5. AI Services Integration (Future Extension)
+
+### 5.1 AI Analysis Services
+
+```python
+# AI-Powered Financial Analysis
+from app.services.ai.market_analyzer import MarketAnalyzer
+from app.services.ai.sentiment_analyzer import SentimentAnalyzer
+
+class FinancialAIService:
+    def __init__(self):
+        self.market_analyzer = MarketAnalyzer()
+        self.sentiment_analyzer = SentimentAnalyzer()
+    
+    async def analyze_market_trends(self, symbols: List[str]) -> MarketAnalysis:
+        """AI-powered market trend analysis"""
+        market_data = await self.get_historical_data(symbols)
+        return await self.market_analyzer.analyze_trends(market_data)
+    
+    async def generate_market_insights(self, user_portfolio: Portfolio) -> List[Insight]:
+        """Generate personalized market insights"""
+        analysis = await self.market_analyzer.analyze_portfolio(user_portfolio)
+        sentiment = await self.sentiment_analyzer.analyze_market_sentiment()
+        
+        return self._combine_insights(analysis, sentiment)
+    
+    async def predict_volatility(self, symbol: str, horizon: str) -> VolatilityForecast:
+        """Predict market volatility using AI models"""
+        return await self.market_analyzer.predict_volatility(symbol, horizon)
+
+# Integration with OpenAI/Claude for Market Commentary
+class AIMarketCommentary:
+    def __init__(self, ai_client):
+        self.ai_client = ai_client
+    
+    async def generate_daily_summary(self, market_data: dict) -> str:
+        """Generate daily market summary using AI"""
+        prompt = self._build_market_summary_prompt(market_data)
+        return await self.ai_client.generate_text(prompt)
+```
+
+### 5.2 Real-time Data Processing
+
+```python
+# WebSocket for Real-time Updates
+from fastapi import WebSocket
+import asyncio
+
+class MarketDataWebSocket:
+    def __init__(self):
+        self.connections: List[WebSocket] = []
+        self.data_feed = None
+    
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.connections.append(websocket)
+    
+    async def disconnect(self, websocket: WebSocket):
+        self.connections.remove(websocket)
+    
+    async def broadcast_market_update(self, data: dict):
+        """Broadcast real-time market updates to all connected clients"""
+        message = json.dumps(data)
+        for connection in self.connections:
+            try:
+                await connection.send_text(message)
+            except:
+                await self.disconnect(connection)
+```
+
+## 6. Stripe Payment Integration
+
+### 6.1 Subscription Tiers
+
+```typescript
+// Frontend Subscription Types
+interface SubscriptionTier {
+  id: string;
+  name: 'free' | 'basic' | 'premium' | 'professional';
+  price: number;
+  features: SubscriptionFeature[];
+  dataRefreshRate: number; // in seconds
+  historicalDataAccess: number; // in years
+  aiInsightsEnabled: boolean;
+  realTimeAlertsEnabled: boolean;
+  portfolioTrackingEnabled: boolean;
+}
+
+interface SubscriptionFeature {
+  name: string;
+  description: string;
+  enabled: boolean;
+}
+
+// Subscription Plans
+export const SUBSCRIPTION_PLANS: SubscriptionTier[] = [
+  {
+    id: 'free',
+    name: 'free',
+    price: 0,
+    features: [
+      { name: 'Basic Market Data', description: '15-minute delayed data', enabled: true },
+      { name: 'Major Indices', description: 'US, European, Asian indices', enabled: true },
+    ],
+    dataRefreshRate: 900, // 15 minutes
+    historicalDataAccess: 0.25, // 3 months
+    aiInsightsEnabled: false,
+    realTimeAlertsEnabled: false,
+    portfolioTrackingEnabled: false,
+  },
+  {
+    id: 'premium',
+    name: 'premium',
+    price: 29.99,
+    features: [
+      { name: 'Real-time Data', description: 'Live market updates', enabled: true },
+      { name: 'AI Market Insights', description: 'AI-powered analysis', enabled: true },
+      { name: 'Custom Alerts', description: 'Personalized notifications', enabled: true },
+    ],
+    dataRefreshRate: 1, // Real-time
+    historicalDataAccess: 5,
+    aiInsightsEnabled: true,
+    realTimeAlertsEnabled: true,
+    portfolioTrackingEnabled: true,
+  },
+];
+```
+
+### 6.2 Stripe Integration Components
+
+```tsx
+// Stripe Payment Components
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY!);
+
+export const SubscriptionPayment: React.FC<{ plan: SubscriptionTier }> = ({ plan }) => {
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentForm plan={plan} />
+    </Elements>
+  );
+};
+
+const PaymentForm: React.FC<{ plan: SubscriptionTier }> = ({ plan }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+
+    setLoading(true);
+    
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: elements.getElement(CardElement)!,
+    });
+
+    if (!error) {
+      await createSubscription(paymentMethod.id, plan.id);
+    }
+    
+    setLoading(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <CardElement />
+      <button type="submit" disabled={!stripe || loading}>
+        Subscribe to {plan.name} - ${plan.price}/month
+      </button>
+    </form>
+  );
+};
+```
+
+### 6.3 Backend Stripe Integration
+
+```python
+# Stripe Payment Service
+import stripe
+from fastapi import APIRouter, Depends, HTTPException
+from app.core.config import settings
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+class StripeService:
+    @staticmethod
+    async def create_subscription(
+        customer_id: str, 
+        price_id: str, 
+        payment_method_id: str
+    ) -> stripe.Subscription:
+        """Create a new subscription"""
+        try:
+            # Attach payment method to customer
+            stripe.PaymentMethod.attach(
+                payment_method_id,
+                customer=customer_id,
+            )
+            
+            # Create subscription
+            subscription = stripe.Subscription.create(
+                customer=customer_id,
+                items=[{'price': price_id}],
+                default_payment_method=payment_method_id,
+                expand=['latest_invoice.payment_intent'],
+            )
+            
+            return subscription
+        except stripe.error.StripeError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    @staticmethod
+    async def create_customer(email: str, name: str) -> stripe.Customer:
+        """Create a new Stripe customer"""
+        return stripe.Customer.create(email=email, name=name)
+    
+    @staticmethod
+    async def handle_webhook(payload: bytes, sig_header: str) -> dict:
+        """Handle Stripe webhooks"""
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            )
+            
+            if event['type'] == 'customer.subscription.updated':
+                # Handle subscription updates
+                await update_user_subscription(event['data']['object'])
+            elif event['type'] == 'customer.subscription.deleted':
+                # Handle subscription cancellation
+                await cancel_user_subscription(event['data']['object'])
+                
+            return {'status': 'success'}
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid payload")
+```
+
+## 7. Development Guidelines
+
+### 7.1 Data Source Integration Priority
+1. **Free Tier**: Yahoo Finance, Alpha Vantage (free tier)
+2. **Paid Tier**: Real-time data providers (IEX Cloud, Polygon.io)
+3. **Professional**: Bloomberg API, Refinitiv
+
+### 7.2 Performance Optimization
+- **Caching Strategy**: Redis for frequently accessed data
+- **Data Compression**: Gzip compression for API responses
+- **CDN Integration**: Static assets via CDN
+- **WebSocket Optimization**: Efficient real-time data streaming
+
+### 7.3 Security Considerations
+- **API Key Management**: Secure storage of external API keys
+- **Rate Limiting**: Implement rate limiting for external API calls
+- **Data Validation**: Strict validation of financial data
+- **Payment Security**: PCI compliance for payment processing
+
+This comprehensive guide provides the foundation for building a scalable financial data dashboard with extensible architecture for future AI and payment integrations.

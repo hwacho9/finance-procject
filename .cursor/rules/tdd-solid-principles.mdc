@@ -1,0 +1,192 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# TDD & SOLID Principles Development Guide
+
+## 1. Purpose & Goals
+
+### Quality Improvement
+- **Test-First Development**: Detect bugs early through comprehensive testing
+- **Early Bug Detection**: Write tests before implementation to catch issues during development
+
+### Maintainability Enhancement
+- **SOLID Principles Compliance**: Build flexible architecture that adapts to changes
+- **Flexible Structure**: Design systems that can evolve without breaking existing functionality
+
+### Collaboration Efficiency
+- **Testable Code Reviews**: Use verifiable tests as communication standards
+- **Simplified Communication**: Tests serve as documentation and specification
+
+## 2. SOLID Principles Application Guide
+
+### S: Single Responsibility Principle
+- **Rule**: Each class/module should have only one responsibility
+- **Testing**: Test classes should verify only one feature or domain behavior
+- **Implementation**: Split large classes into focused, single-purpose components
+
+### O: Open/Closed Principle
+- **Rule**: Open for extension, closed for modification
+- **Implementation**: Use interfaces or abstract classes for extensibility
+- **Testing**: New behaviors through implements/extends, existing code remains unchanged
+
+### L: Liskov Substitution Principle
+- **Rule**: Subtypes must be substitutable for their base types
+- **Testing**: Ensure all subtype implementations work correctly in place of parent types
+- **Verification**: Test that polymorphic behavior works as expected
+
+### I: Interface Segregation Principle
+- **Rule**: Design small, client-specific interfaces with minimal methods
+- **Testing**: Mock only the interfaces needed for each test
+- **Implementation**: Avoid fat interfaces, prefer focused contracts
+
+### D: Dependency Inversion Principle
+- **Rule**: High-level modules should not depend on low-level modules; both should depend on abstractions
+- **Implementation**: Use DI frameworks or factory patterns
+- **Testing**: Inject stubs/mocks instead of concrete implementations
+
+## 3. TDD Process (Red-Green-Refactor)
+
+### Red Phase
+- Write a failing unit test first
+- Test should specify the exact behavior expected
+- Use Given-When-Then pattern for test structure
+
+### Green Phase
+- Write minimal code to make the test pass
+- Focus on making it work, not making it perfect
+- Avoid premature optimization
+
+### Refactor Phase
+- Apply SOLID principles
+- Follow coding conventions
+- Remove code duplication
+- Improve readability and maintainability
+
+### Commit & Review
+- **Commit Message**: Use conventional commits (feat(test): description or refactor: description)
+- **Code Review**: Check test coverage, SOLID compliance, and refactoring quality
+- **Tip**: Each test case should cover one scenario, including edge cases and exceptions
+
+## 4. Specific Development Rules
+
+### Test Writing Rules
+1. **Test-First Development**: Always write tests before implementation
+   - Use Given-When-Then pattern
+   - Write descriptive test names
+
+2. **Unit Test Coverage ≥ 80%**: Consider both line and path coverage
+   - Measure meaningful coverage, not just metrics
+   - Focus on critical business logic
+
+3. **Minimize Mock/Stub Usage**: Keep unit tests focused
+   - Use real objects when possible
+   - Save infrastructure access for integration tests
+
+### Code Structure Rules
+4. **Maximum 200 Lines Per Class**: Keep classes focused and manageable
+   - Minimize nested control structures
+   - Split large classes into smaller components
+
+5. **Maximum 20 Lines Per Method**: One method, one responsibility
+   - Extract complex logic into separate methods
+   - Improve readability and testability
+
+6. **Mandatory Dependency Injection**: Enable testability
+   - Prefer constructor injection
+   - Make dependencies explicit and mockable
+
+### Naming Conventions
+7. **Test Method Naming**: Use `should_<behavior>_when_<condition>` format
+   - Example: `should_add_item_to_cart_when_inventory_available`
+   - Make test intentions clear from the name
+
+8. **Interface/Abstract Class Naming**: No prefixes
+   - Use `OrderService` instead of `IOrderService`
+   - Keep names clean and meaningful
+
+### Commit Messages
+9. **Conventional Commits**: Use standardized prefixes
+   - `feat:` for new features
+   - `fix:` for bug fixes
+   - `refactor:` for code improvements
+   - `test:` for adding tests
+   - `chore:` for maintenance tasks
+
+### Code Review
+10. **Maximum 200 Lines Per PR**: Keep reviews manageable
+    - Reduce review burden
+    - Merge small changes frequently
+    - Maintain code quality
+
+### Automation
+11. **CI Pipeline**: Automated quality gates
+    - Lint → Unit Tests → Coverage Gate
+    - Run on every PR
+    - Prevent regression
+
+## 5. TDD Cycle Example
+
+```
+1) Write Test
+   test_should_add_item_to_cart_when_inventory_available()
+
+2) Run Test → Fails (Red)
+
+3) Write Minimal Code
+   class Cart { 
+     void add(Item item) { 
+       items.add(item); 
+     } 
+   }
+
+4) Run Test → Passes (Green)
+
+5) Refactor
+   - Apply SRP to Cart class: extract InventoryChecker
+   - Apply Dependency Injection
+
+6) Commit: feat(test): add item to cart functionality with inventory check
+```
+
+## 6. CI/CD and Code Review Guidelines
+
+### CI Checkpoints
+- **Code Style (Lint)**: Ensure consistent formatting
+- **Unit Test Execution**: All tests must pass
+- **Coverage Gate**: Maintain minimum coverage threshold (80%+)
+- **Static Analysis**: Optional quality checks
+
+### Code Review Checklist
+- **SOLID Principles Compliance**: Check for violations
+- **Test Scenarios**: Verify sufficient edge cases and boundary conditions
+- **Dependency Management**: Remove unnecessary injections/dependencies
+- **Size Compliance**: Ensure methods and classes meet size requirements
+- **Test Quality**: Review test readability and maintainability
+
+## 7. Best Practices
+
+### Test Design
+- Write tests that document intended behavior
+- Include positive, negative, and edge cases
+- Keep tests independent and isolated
+- Use descriptive assertions with clear error messages
+
+### Code Design
+- Favor composition over inheritance
+- Use meaningful variable and method names
+- Keep public interfaces minimal
+- Design for testability from the start
+
+### Refactoring Guidelines
+- Refactor frequently in small steps
+- Maintain test coverage during refactoring
+- Remove dead code and unused dependencies
+- Improve code readability continuously
+
+### Team Collaboration
+- Use tests as living documentation
+- Share knowledge through code reviews
+- Establish team coding standards
+- Encourage continuous learning and improvement
