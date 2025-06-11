@@ -3,20 +3,21 @@ description:
 globs: 
 alwaysApply: false
 ---
-# React + FastAPI Development Guidelines
+# Next.js + FastAPI Development Guidelines
 
 ## Project Architecture Overview
 
 ### Tech Stack
-- **Frontend**: React with TypeScript
+- **Frontend**: Next.js 14 (App Router) with TypeScript
 - **Backend**: FastAPI with Python
-- **Testing**: React Testing Library + Jest (Frontend), pytest (Backend)
-- **State Management**: React Context API / Zustand / Redux Toolkit
-- **Styling**: Tailwind CSS / Styled Components
-- **Database**: SQLite (development)
+- **Authentication**: Firebase Authentication
+- **Testing**: Jest + React Testing Library (Frontend), pytest (Backend)
+- **State Management**: Zustand / React Context API
+- **Styling**: Tailwind CSS
+- **Database**: PostgreSQL (production), SQLite (development)
 - **ORM**: SQLAlchemy with Alembic migrations
 
-## Frontend (React) Development Rules
+## Frontend (Next.js) Development Rules
 
 ### 1. Component Structure
 - **Functional Components Only**: Use function components with hooks
@@ -73,25 +74,69 @@ describe('UserCard', () => {
 });
 ```
 
-### 4. Folder Structure
+### 4. Next.js App Router Structure
 ```
-src/
-├── components/           # Reusable UI components
-│   ├── common/          # Generic components (Button, Input)
-│   └── specific/        # Domain-specific components
-├── pages/               # Route components
-├── hooks/               # Custom hooks
-├── services/            # API calls and external services
-├── types/               # TypeScript type definitions
-├── utils/               # Utility functions
-├── stores/              # State management
-└── __tests__/           # Global test utilities
+app/                     # Next.js 14 App Router
+├── (auth)/             # Route groups for authentication
+│   ├── login/          # Login page
+│   └── register/       # Register page
+├── dashboard/          # Protected dashboard routes
+├── globals.css         # Global styles
+├── layout.tsx          # Root layout
+├── page.tsx            # Home page
+└── loading.tsx         # Loading UI
+
+components/             # Reusable UI components
+├── auth/              # Authentication components
+├── ui/                # Generic UI components (Button, Input)
+└── dashboard/         # Dashboard-specific components
+
+lib/                   # Utilities and configurations
+├── firebase.ts        # Firebase configuration
+├── auth.ts           # Authentication utilities
+├── api.ts            # API client functions
+└── utils.ts          # General utilities
+
+hooks/                 # Custom React hooks
+├── useAuth.ts         # Authentication hook
+└── useApi.ts          # API hooks
+
+types/                 # TypeScript type definitions
+├── auth.ts           # Authentication types
+└── api.ts            # API response types
+
+stores/               # State management (Zustand)
+└── auth.ts           # Authentication store
 ```
 
-### 5. State Management Rules
+### 5. Firebase Authentication Rules
+- **Firebase Config**: Use environment variables for Firebase configuration
+- **Auth Context**: Create auth context provider for global authentication state
+- **Protected Routes**: Use middleware for route protection
+- **Error Handling**: Implement proper error handling for auth operations
+
+```tsx
+// ✅ Firebase Auth Hook Example
+const useAuth = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  return { user, loading };
+};
+```
+
+### 6. State Management Rules
 - **Local State**: Use useState for component-specific state
-- **Shared State**: Use React Context for app-wide state
-- **Complex State**: Consider Zustand or Redux Toolkit for complex state logic
+- **Global State**: Use Zustand for global state management
+- **Auth State**: Firebase handles auth state automatically
 - **Server State**: Use React Query / SWR for server state management
 
 ## Backend (FastAPI) Development Rules
