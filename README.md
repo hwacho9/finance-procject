@@ -1,4 +1,4 @@
-# Macro Finance Dashboard 📊
+# myInvestAssets - Macro Finance Dashboard 📊
 
 > **실시간 금융 데이터 시각화 플랫폼**  
 > React + FastAPI 기반의 포괄적인 거시경제 지표 대시보드
