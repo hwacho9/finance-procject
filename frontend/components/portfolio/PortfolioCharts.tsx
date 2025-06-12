@@ -78,7 +78,7 @@ export const PortfolioValueChart: React.FC<PortfolioValueChartProps> = ({
 
     return (
         <div className="w-full h-80">
-            <h3 className="text-lg font-semibold mb-4">포트폴리오 가치 추이</h3>
+            {/* <h3 className="text-lg font-semibold mb-4">포트폴리오 가치 추이</h3> */}
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -264,7 +264,7 @@ export const AssetAllocationChart: React.FC<AssetAllocationChartProps> = ({
 
     return (
         <div className="w-full h-80">
-            <h3 className="text-lg font-semibold mb-4">자산 배분</h3>
+            {/* <h3 className="text-lg font-semibold mb-4">자산 배분</h3> */}
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie

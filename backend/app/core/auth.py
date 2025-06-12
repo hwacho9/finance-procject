@@ -80,15 +80,28 @@ async def get_current_user(
         # Verify the ID token
         decoded_token = auth.verify_id_token(credentials.credentials)
 
-        # Extract user information
+        # Extract basic user information
         uid = decoded_token.get("uid")
-        email = decoded_token.get("email")
-        name = decoded_token.get("name")
-
         if not uid:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token: missing user ID",
+            )
+
+        # Get additional user information from Firebase Admin SDK
+        try:
+            user_record = auth.get_user(uid)
+            name = user_record.display_name
+            email = user_record.email
+        except Exception as e:
+            logger.warning(f"Could not fetch user details from Firebase Admin SDK: {e}")
+            # Fallback to token data
+            email = decoded_token.get("email")
+            name = (
+                decoded_token.get("name")
+                or decoded_token.get("display_name")
+                or (email.split("@")[0] if email else None)
+                or "User"
             )
 
         return FirebaseUser(uid=uid, email=email, name=name)

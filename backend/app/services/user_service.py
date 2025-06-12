@@ -56,12 +56,7 @@ class UserService:
 
     def get_user_by_uid(self, uid: str) -> Optional[User]:
         """UID로 사용자 조회"""
-        return (
-            self.db.query(User)
-            .options(selectinload(User.portfolios))
-            .filter(User.uid == uid)
-            .first()
-        )
+        return self.db.query(User).filter(User.uid == uid).first()
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         """이메일로 사용자 조회"""
@@ -114,6 +109,14 @@ class UserService:
         if existing_user:
             # 마지막 로그인 시간 업데이트
             self.update_last_login(firebase_user.uid)
+            # 포트폴리오 정보를 별도로 로드
+            from app.models.portfolio import Portfolio
+
+            existing_user.portfolios = (
+                self.db.query(Portfolio)
+                .filter(Portfolio.user_id == firebase_user.uid)
+                .all()
+            )
             return existing_user
 
         # 새 사용자 생성
@@ -125,5 +128,10 @@ class UserService:
         )
 
         new_user = self.create_user(user_data)
-        # 새로 생성된 유저의 포트폴리오 정보를 로드하기 위해 다시 조회
-        return self.get_user_by_uid(new_user.uid)
+        # 새로 생성된 유저의 포트폴리오 정보를 별도로 로드
+        from app.models.portfolio import Portfolio
+
+        new_user.portfolios = (
+            self.db.query(Portfolio).filter(Portfolio.user_id == new_user.uid).all()
+        )
+        return new_user
