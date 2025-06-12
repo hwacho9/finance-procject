@@ -1,143 +1,218 @@
 "use client";
 
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
-const loginSchema = z.object({
-    email: z.string().email("유효한 이메일 주소를 입력해주세요"),
-    password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
-});
+interface LoginFormProps {
+    onSuccess?: () => void;
+}
 
-type LoginFormData = z.infer<typeof loginSchema>;
+export default function LoginForm({ onSuccess }: LoginFormProps) {
+    const { signIn, signUp, signInWithGoogle } = useAuth();
+    const [isLogin, setIsLogin] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-export const LoginForm: React.FC = () => {
-    const [showPassword, setShowPassword] = useState(false);
-    const { signIn, loading, error, clearError } = useAuth();
-    const router = useRouter();
-
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        reset,
-    } = useForm<LoginFormData>({
-        resolver: zodResolver(loginSchema),
+    const [formData, setFormData] = useState({
+        email: "",
+        password: "",
+        displayName: "",
+        confirmPassword: "",
     });
 
-    const onSubmit = async (data: LoginFormData) => {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
         try {
-            clearError();
-            await signIn(data.email, data.password);
-            reset();
-            router.push("/dashboard");
-        } catch (error) {
-            // Error is handled by the auth store
-            console.error("Login failed:", error);
+            if (isLogin) {
+                await signIn(formData.email, formData.password);
+            } else {
+                if (formData.password !== formData.confirmPassword) {
+                    throw new Error("비밀번호가 일치하지 않습니다.");
+                }
+                await signUp(
+                    formData.email,
+                    formData.password,
+                    formData.displayName
+                );
+            }
+            onSuccess?.();
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error ? error.message : "An error occurred";
+            setError(message);
+        } finally {
+            setLoading(false);
         }
     };
 
+    const handleGoogleSignIn = async () => {
+        setError("");
+        setLoading(true);
+
+        try {
+            await signInWithGoogle();
+            onSuccess?.();
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error ? error.message : "An error occurred";
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleInputChange = (field: string, value: string) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
     return (
-        <div className="w-full max-w-md mx-auto">
-            <div className="bg-white shadow-lg rounded-lg p-6">
-                <div className="text-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">로그인</h1>
-                    <p className="text-gray-600 mt-2">계정에 로그인하세요</p>
+        <div className="w-full max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+            <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">
+                    {isLogin ? "로그인" : "회원가입"}
+                </h1>
+                <p className="text-gray-600 mt-2">
+                    {isLogin
+                        ? "포트폴리오 관리 시스템에 로그인하세요"
+                        : "새 계정을 만들어 시작하세요"}
+                </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {!isLogin && (
+                    <div>
+                        <label
+                            htmlFor="displayName"
+                            className="block text-sm font-medium text-gray-700 mb-1">
+                            이름
+                        </label>
+                        <Input
+                            id="displayName"
+                            type="text"
+                            placeholder="홍길동"
+                            value={formData.displayName}
+                            onChange={(e) =>
+                                handleInputChange("displayName", e.target.value)
+                            }
+                            required={!isLogin}
+                        />
+                    </div>
+                )}
+
+                <div>
+                    <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-gray-700 mb-1">
+                        이메일
+                    </label>
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="email@example.com"
+                        value={formData.email}
+                        onChange={(e) =>
+                            handleInputChange("email", e.target.value)
+                        }
+                        required
+                    />
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                    <label
+                        htmlFor="password"
+                        className="block text-sm font-medium text-gray-700 mb-1">
+                        비밀번호
+                    </label>
                     <Input
-                        label="이메일"
-                        type="email"
-                        placeholder="your@email.com"
-                        error={errors.email?.message}
-                        {...register("email")}
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={(e) =>
+                            handleInputChange("password", e.target.value)
+                        }
+                        required
                     />
+                </div>
 
-                    <div className="relative">
+                {!isLogin && (
+                    <div>
+                        <label
+                            htmlFor="confirmPassword"
+                            className="block text-sm font-medium text-gray-700 mb-1">
+                            비밀번호 확인
+                        </label>
                         <Input
-                            label="비밀번호"
-                            type={showPassword ? "text" : "password"}
+                            id="confirmPassword"
+                            type="password"
                             placeholder="••••••••"
-                            error={errors.password?.message}
-                            {...register("password")}
+                            value={formData.confirmPassword}
+                            onChange={(e) =>
+                                handleInputChange(
+                                    "confirmPassword",
+                                    e.target.value
+                                )
+                            }
+                            required={!isLogin}
                         />
-                        <button
-                            type="button"
-                            className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
-                            onClick={() => setShowPassword(!showPassword)}>
-                            {showPassword ? (
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                                    />
-                                </svg>
-                            ) : (
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                    />
-                                </svg>
-                            )}
-                        </button>
                     </div>
+                )}
 
-                    {error && (
-                        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
-                            {error}
-                        </div>
+                {error && (
+                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                        {error}
+                    </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
+                    {isLogin ? "로그인" : "계정 만들기"}
+                </Button>
+            </form>
 
-                    <Button type="submit" loading={loading} className="w-full">
-                        로그인
-                    </Button>
-
-                    <div className="text-center">
-                        <Link
-                            href="/forgot-password"
-                            className="text-sm text-blue-600 hover:text-blue-500">
-                            비밀번호를 잊으셨나요?
-                        </Link>
+            <div className="mt-4">
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-300" />
                     </div>
-
-                    <div className="text-center pt-4 border-t border-gray-200">
-                        <p className="text-sm text-gray-600">
-                            계정이 없으신가요?{" "}
-                            <Link
-                                href="/register"
-                                className="text-blue-600 hover:text-blue-500 font-medium">
-                                회원가입
-                            </Link>
-                        </p>
+                    <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-white text-gray-500">
+                            또는
+                        </span>
                     </div>
-                </form>
+                </div>
+
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full mt-4"
+                    onClick={handleGoogleSignIn}
+                    disabled={loading}>
+                    {loading && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Google로 계속하기
+                </Button>
+            </div>
+
+            <div className="text-center text-sm mt-4">
+                <button
+                    type="button"
+                    className="text-blue-600 hover:text-blue-500 hover:underline"
+                    onClick={() => setIsLogin(!isLogin)}>
+                    {isLogin
+                        ? "계정이 없으신가요? 회원가입"
+                        : "이미 계정이 있으신가요? 로그인"}
+                </button>
             </div>
         </div>
     );
-};
+}

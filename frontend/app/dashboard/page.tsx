@@ -1,12 +1,11 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function DashboardPage() {
-    const { user, loading, signOut } = useAuth();
+    const { user, loading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -14,15 +13,6 @@ export default function DashboardPage() {
             router.push("/login");
         }
     }, [user, loading, router]);
-
-    const handleSignOut = async () => {
-        try {
-            await signOut();
-            router.push("/");
-        } catch (error) {
-            console.error("Sign out failed:", error);
-        }
-    };
 
     if (loading) {
         return (
@@ -41,43 +31,7 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-                        <div className="flex items-center">
-                            <h1 className="text-xl font-semibold text-gray-900">
-                                Macro Finance Dashboard
-                            </h1>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-sm font-medium">
-                                        {user.displayName?.[0]?.toUpperCase() ||
-                                            user.email?.[0]?.toUpperCase()}
-                                    </span>
-                                </div>
-                                <div className="hidden sm:block">
-                                    <p className="text-sm font-medium text-gray-900">
-                                        {user.displayName || user.email}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                        {user.email}
-                                    </p>
-                                </div>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleSignOut}>
-                                로그아웃
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
-            <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 <div className="px-4 py-6 sm:px-0">
                     <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
                         <div className="text-center">
@@ -95,7 +49,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }

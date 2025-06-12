@@ -6,10 +6,11 @@ import logging
 import uvicorn
 
 from app.core.config import settings
-from app.core.database import init_db
+from app.core.database import create_tables
 from app.api.v1.market import router as market_router
 from app.api.v1.economic import router as economic_router
 from app.api.v1.scheduler import router as scheduler_router
+from app.api.v1.portfolio import router as portfolio_router
 
 # Configure logging
 logging.basicConfig(
@@ -27,7 +28,7 @@ async def lifespan(app: FastAPI):
 
     # Initialize database
     try:
-        await init_db()
+        create_tables()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
@@ -54,7 +55,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -99,6 +100,7 @@ async def root():
 
 
 # Include API routers
+app.include_router(portfolio_router, tags=["Portfolio"])
 app.include_router(market_router, prefix=settings.api_v1_prefix, tags=["Market Data"])
 app.include_router(
     economic_router, prefix=settings.api_v1_prefix, tags=["Economic Data"]
@@ -109,9 +111,12 @@ app.include_router(
     tags=["Data Scheduler"],
 )
 
+# User management router
+from app.api.v1.users import router as users_router
+
+app.include_router(users_router, tags=["Users"])
 
 # Future routers (placeholder for extension)
-# app.include_router(user_router, prefix=settings.api_v1_prefix)
 # app.include_router(subscription_router, prefix=settings.api_v1_prefix)
 
 

@@ -32,7 +32,7 @@ interface AuthActions {
     initializeAuth: () => () => void;
 }
 
-export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
+export const useAuthStore = create<AuthState & AuthActions>((set) => ({
     user: null,
     loading: true,
     error: null,
@@ -56,8 +56,24 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
                 await updateProfile(userCredential.user, { displayName });
             }
 
+            // Firebase 회원가입 성공 후 백엔드에 사용자 정보 저장
+            if (userCredential.user) {
+                try {
+                    // 백엔드 API import 필요
+                    const { userApi } = await import("@/lib/api");
+                    await userApi.getCurrentUser(); // 백엔드에서 사용자 생성 또는 조회
+                    console.log("사용자 정보가 백엔드에 저장되었습니다.");
+                } catch (backendError) {
+                    console.error(
+                        "백엔드 사용자 정보 저장 실패:",
+                        backendError
+                    );
+                    // 백엔드 저장 실패는 치명적이지 않으므로 에러를 throw하지 않음
+                }
+            }
+
             set({ loading: false });
-        } catch (error: any) {
+        } catch (error: unknown) {
             const authError = error as AuthError;
             set({
                 loading: false,
@@ -74,7 +90,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
             await signInWithEmailAndPassword(auth, email, password);
 
             set({ loading: false });
-        } catch (error: any) {
+        } catch (error: unknown) {
             const authError = error as AuthError;
             set({
                 loading: false,
@@ -91,7 +107,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
             await firebaseSignOut(auth);
 
             set({ user: null, loading: false });
-        } catch (error: any) {
+        } catch (error: unknown) {
             const authError = error as AuthError;
             set({
                 loading: false,
@@ -108,7 +124,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
             await sendPasswordResetEmail(auth, email);
 
             set({ loading: false });
-        } catch (error: any) {
+        } catch (error: unknown) {
             const authError = error as AuthError;
             set({
                 loading: false,

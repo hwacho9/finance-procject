@@ -5,50 +5,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 
 export default function HomePage() {
-    const { user, loading } = useAuth();
+    const { user } = useAuth();
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-            <nav className="bg-white shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-                        <div className="flex items-center">
-                            <h1 className="text-xl font-bold text-gray-900">
-                                Macro Finance
-                            </h1>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            {loading ? (
-                                <div className="animate-pulse">
-                                    <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                                </div>
-                            ) : user ? (
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm text-gray-600">
-                                        {user.displayName || user.email}님
-                                    </span>
-                                    <Link href="/dashboard">
-                                        <Button>대시보드</Button>
-                                    </Link>
-                                </div>
-                            ) : (
-                                <div className="flex items-center space-x-2">
-                                    <Link href="/login">
-                                        <Button variant="outline">
-                                            로그인
-                                        </Button>
-                                    </Link>
-                                    <Link href="/register">
-                                        <Button>회원가입</Button>
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="text-center">
                     <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-6">
                         실시간 거시경제
@@ -152,7 +113,7 @@ export default function HomePage() {
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }

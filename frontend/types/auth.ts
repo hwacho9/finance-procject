@@ -1,4 +1,5 @@
 import { User as FirebaseUser } from "firebase/auth";
+import { Portfolio } from "./portfolio";
 
 export interface User {
     uid: string;
@@ -6,6 +7,7 @@ export interface User {
     displayName: string | null;
     photoURL: string | null;
     emailVerified: boolean;
+    portfolios?: Portfolio[];
 }
 
 export interface AuthContextType {

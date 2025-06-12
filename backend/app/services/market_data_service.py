@@ -2,6 +2,8 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import logging
 import json
+import requests
+import os
 
 from app.services.providers.base import MarketDataProvider, CacheProvider
 from app.schemas.market_schemas import (
@@ -32,6 +34,51 @@ class MarketDataService:
         """Dependency injection of providers following DIP."""
         self.market_provider = market_provider
         self.cache_provider = cache_provider
+        self.alpha_vantage_api_key = os.getenv("ALPHA_VANTAGE_API_KEY", "demo")
+        self.base_url = "https://www.alphavantage.co/query"
+
+        # Mock data for demo purposes
+        self.mock_prices = {
+            "AAPL": 175.43,
+            "MSFT": 338.11,
+            "GOOGL": 138.21,
+            "AMZN": 144.05,
+            "TSLA": 243.84,
+            "NVDA": 722.48,
+            "META": 329.80,
+            "BRK.B": 355.47,
+            "JNJ": 160.23,
+            "V": 268.75,
+            "PG": 156.78,
+            "KO": 58.93,
+            "PFE": 28.45,
+            "DIS": 91.27,
+            "VTI": 245.67,
+            "SPY": 445.91,
+            "QQQ": 378.22,
+            "VXUS": 58.12,
+        }
+
+        self.mock_dividends = {
+            "AAPL": 0.52,
+            "MSFT": 2.72,
+            "GOOGL": 0.0,
+            "AMZN": 0.0,
+            "TSLA": 0.0,
+            "NVDA": 0.16,
+            "META": 0.0,
+            "BRK.B": 0.0,
+            "JNJ": 4.68,
+            "V": 1.80,
+            "PG": 3.65,
+            "KO": 1.84,
+            "PFE": 1.64,
+            "DIS": 0.0,
+            "VTI": 3.28,
+            "SPY": 5.44,
+            "QQQ": 2.05,
+            "VXUS": 2.38,
+        }
 
     async def get_indices(self, region: Optional[str] = None) -> MarketIndicesResponse:
         """
@@ -422,6 +469,96 @@ class MarketDataService:
             logger.warning(f"Error parsing cached indices data: {e}")
             raise
 
+    def get_current_price(self, symbol: str) -> float:
+        """Get current price for a stock symbol"""
+        try:
+            # For demo, return mock data
+            if symbol.upper() in self.mock_prices:
+                return self.mock_prices[symbol.upper()]
+
+            # If not in mock data, try Alpha Vantage API
+            if self.alpha_vantage_api_key != "demo":
+                return self._fetch_alpha_vantage_price(symbol)
+
+            # Default fallback
+            return 100.0
+
+        except Exception as e:
+            logger.error(f"Error fetching price for {symbol}: {e}")
+            return 100.0  # Fallback price
+
+    def get_dividend_yield(self, symbol: str) -> Optional[float]:
+        """Get dividend yield for a stock symbol"""
+        try:
+            # For demo, return mock data
+            if symbol.upper() in self.mock_dividends:
+                return self.mock_dividends[symbol.upper()]
+
+            # Default fallback
+            return 2.0
+
+        except Exception as e:
+            logger.error(f"Error fetching dividend yield for {symbol}: {e}")
+            return 2.0  # Fallback yield
+
+    def _fetch_alpha_vantage_price(self, symbol: str) -> float:
+        """Fetch price from Alpha Vantage API"""
+        try:
+            params = {
+                "function": "GLOBAL_QUOTE",
+                "symbol": symbol,
+                "apikey": self.alpha_vantage_api_key,
+            }
+
+            response = requests.get(self.base_url, params=params, timeout=10)
+            response.raise_for_status()
+
+            data = response.json()
+
+            if "Global Quote" in data:
+                price_str = data["Global Quote"].get("05. price", "0")
+                return float(price_str)
+
+            return 100.0  # Fallback
+
+        except Exception as e:
+            logger.error(f"Alpha Vantage API error for {symbol}: {e}")
+            return 100.0
+
+    def get_company_info(self, symbol: str) -> Dict[str, str]:
+        """Get basic company information"""
+        # Mock company data
+        company_data = {
+            "AAPL": {"name": "Apple Inc.", "sector": "Technology"},
+            "MSFT": {"name": "Microsoft Corporation", "sector": "Technology"},
+            "GOOGL": {"name": "Alphabet Inc.", "sector": "Technology"},
+            "AMZN": {"name": "Amazon.com Inc.", "sector": "Consumer Discretionary"},
+            "TSLA": {"name": "Tesla Inc.", "sector": "Consumer Discretionary"},
+            "NVDA": {"name": "NVIDIA Corporation", "sector": "Technology"},
+            "META": {"name": "Meta Platforms Inc.", "sector": "Technology"},
+            "BRK.B": {
+                "name": "Berkshire Hathaway Inc.",
+                "sector": "Financial Services",
+            },
+            "JNJ": {"name": "Johnson & Johnson", "sector": "Healthcare"},
+            "V": {"name": "Visa Inc.", "sector": "Financial Services"},
+            "PG": {"name": "Procter & Gamble Co.", "sector": "Consumer Staples"},
+            "KO": {"name": "The Coca-Cola Company", "sector": "Consumer Staples"},
+            "PFE": {"name": "Pfizer Inc.", "sector": "Healthcare"},
+            "DIS": {
+                "name": "The Walt Disney Company",
+                "sector": "Communication Services",
+            },
+            "VTI": {"name": "Vanguard Total Stock Market ETF", "sector": "ETF"},
+            "SPY": {"name": "SPDR S&P 500 ETF Trust", "sector": "ETF"},
+            "QQQ": {"name": "Invesco QQQ Trust", "sector": "ETF"},
+            "VXUS": {"name": "Vanguard Total International Stock ETF", "sector": "ETF"},
+        }
+
+        return company_data.get(
+            symbol.upper(), {"name": f"{symbol.upper()} Inc.", "sector": "Unknown"}
+        )
+
 
 # Factory function for creating MarketDataService with proper dependencies
 def create_market_data_service() -> MarketDataService:
@@ -434,3 +571,7 @@ def create_market_data_service() -> MarketDataService:
     market_provider = AlphaVantageProvider()
     # For now, create without cache provider to avoid FastAPI dependency issues
     return MarketDataService(market_provider, None)
+
+
+# Singleton instance
+market_data_service = MarketDataService(None, None)

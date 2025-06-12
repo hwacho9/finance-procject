@@ -48,7 +48,9 @@ class Settings:
         if os.getenv("DEBUG"):
             self.debug = os.getenv("DEBUG").lower() == "true"
         if os.getenv("CORS_ORIGINS"):
-            self.cors_origins = [os.getenv("CORS_ORIGINS")]
+            self.cors_origins = [
+                origin.strip() for origin in os.getenv("CORS_ORIGINS").split(",")
+            ]
         if os.getenv("FRED_API_KEY"):
             self.fred_api_key = os.getenv("FRED_API_KEY")
         if os.getenv("ALPHA_VANTAGE_API_KEY"):
