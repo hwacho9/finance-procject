@@ -9,83 +9,83 @@ Macro Finance Dashboard는 실시간 금융 시장 데이터와 거시경제 지
 
 ### 주요 기능
 
-- **📈 실시간 시장 지수**: 미국, 유럽, 아시아 주요 지수 모니터링
-- **💹 거시경제 지표**: PMI, 인플레이션, 고용지표 등 종합 분석
-- **⚡ 변동성 지수**: VIX, VXN 등 시장 심리 지표
-- **🛢️ 원자재 가격**: WTI, 브렌트유, 금, 구리 등 상품 시세
-- **💱 환율 정보**: 주요 통화 쌍 실시간 환율
-- **🔔 AI 기반 분석**: 시장 트렌드 분석 및 인사이트 (예정)
-- **💳 구독 서비스**: Stripe 기반 프리미엄 기능 (예정)
+-   **📈 실시간 시장 지수**: 미국, 유럽, 아시아 주요 지수 모니터링
+-   **💹 거시경제 지표**: PMI, 인플레이션, 고용지표 등 종합 분석
+-   **⚡ 변동성 지수**: VIX, VXN 등 시장 심리 지표
+-   **🛢️ 원자재 가격**: WTI, 브렌트유, 금, 구리 등 상품 시세
+-   **💱 환율 정보**: 주요 통화 쌍 실시간 환율
+-   **🔔 AI 기반 분석**: 시장 트렌드 분석 및 인사이트 (예정)
+-   **💳 구독 서비스**: Stripe 기반 프리미엄 기능 (예정)
 
 ## 🏗️ 기술 스택
 
 ### Frontend (예정)
 
-- **React 18** with TypeScript
-- **Tailwind CSS** for styling
-- **React Query** for server state management
-- **Recharts/D3.js** for data visualization
+-   **React 18** with TypeScript
+-   **Tailwind CSS** for styling
+-   **React Query** for server state management
+-   **Recharts/D3.js** for data visualization
 
 ### Backend
 
-- **FastAPI** - 고성능 Python 웹 프레임워크
-- **SQLAlchemy** - ORM 및 데이터베이스 관리
-- **PostgreSQL** - 메인 데이터베이스
-- **Redis** - 캐싱 및 세션 관리
-- **Pydantic** - 데이터 검증 및 직렬화
+-   **FastAPI** - 고성능 Python 웹 프레임워크
+-   **SQLAlchemy** - ORM 및 데이터베이스 관리
+-   **PostgreSQL** - 메인 데이터베이스
+-   **Redis** - 캐싱 및 세션 관리
+-   **Pydantic** - 데이터 검증 및 직렬화
 
 ### 데이터 소스
 
-- **Yahoo Finance** - 주식 및 지수 데이터
-- **Alpha Vantage** - 프리미엄 시장 데이터 (예정)
-- **FRED API** - 연방준비제도 경제 지표 데이터 ✅
+-   **Yahoo Finance** - 주식 및 지수 데이터
+-   **Alpha Vantage** - 프리미엄 시장 데이터 (예정)
+-   **FRED API** - 연방준비제도 경제 지표 데이터 ✅
 
 ### 개발 환경
 
-- **Docker & Docker Compose** - 컨테이너화된 개발 환경
-- **pytest** - 테스트 프레임워크
-- **Black & isort** - 코드 포맷팅
-- **TDD** - 테스트 주도 개발
+-   **Docker & Docker Compose** - 컨테이너화된 개발 환경
+-   **pytest** - 테스트 프레임워크
+-   **Black & isort** - 코드 포맷팅
+-   **TDD** - 테스트 주도 개발
 
 ## 🚀 빠른 시작
 
 ### 사전 요구사항
 
-- **Docker** (v20.10+)
-- **Docker Compose** (v2.0+)
-- **Git**
+-   **Docker** (v20.10+)
+-   **Docker Compose** (v2.0+)
+-   **Git**
 
 ### 설치 및 실행
 
 1. **레포지토리 클론**
 
-   ```bash
-   git clone <repository-url>
-   cd macro-finance
-   ```
+    ```bash
+    git clone <repository-url>
+    cd macro-finance
+    ```
 
 2. **환경 변수 설정**
 
-   ```bash
-   cp .env.example .env
-   # .env 파일을 편집하여 필요한 설정값 입력
-   ```
+    ```bash
+    cp .env.example .env
+    # .env 파일을 편집하여 필요한 설정값 입력
+    ```
 
 3. **Docker Compose로 실행**
 
-   ```bash
-   # 모든 서비스 빌드 및 시작
-   docker-compose up --build
+    ```bash
+    # 모든 서비스 빌드 및 시작
+    docker-compose up --build
 
-   # 백그라운드 실행
-   docker-compose up -d
-   ```
+    # 백그라운드 실행
+    docker-compose up -d
+    ```
 
 4. **서비스 확인**
-   - **API 문서**: http://localhost:8000/docs
-   - **API 상태**: http://localhost:8000/health
-   - **데이터베이스**: localhost:5432
-   - **Redis**: localhost:6379
+    - **API 문서**: http://localhost:8000/docs
+    - **API 상태**: http://localhost:8000/health
+    - **데이터베이스**: localhost:5432
+    - **Redis**: localhost:6379
 
 ### 개별 서비스 실행
 
@@ -148,18 +148,18 @@ POST /api/v1/economic/refresh?category=bonds
 
 ```json
 {
-  "us_indices": {
-    "sp500": {
-      "symbol": "SP500",
-      "name": "S&P 500",
-      "current_value": 4500.0,
-      "change": 25.5,
-      "change_percent": 0.57,
-      "timestamp": "2024-01-15T10:30:00Z",
-      "market_status": "open"
-    }
-  },
-  "timestamp": "2024-01-15T10:30:00Z"
+    "us_indices": {
+        "sp500": {
+            "symbol": "SP500",
+            "name": "S&P 500",
+            "current_value": 4500.0,
+            "change": 25.5,
+            "change_percent": 0.57,
+            "timestamp": "2024-01-15T10:30:00Z",
+            "market_status": "open"
+        }
+    },
+    "timestamp": "2024-01-15T10:30:00Z"
 }
 ```
 
@@ -172,7 +172,7 @@ POST /api/v1/economic/refresh?category=bonds
 | **DJIA**        | Dow Jones Industrial Average     | DIA (ETF)   | 다우존스 산업평균지수  |
 | **SP500**       | S&P 500                          | SPY (ETF)   | S&P 500 지수           |
 | **NASDAQ**      | NASDAQ Composite                 | QQQ (ETF)   | 나스닥 종합지수        |
-| **RUSSELL2000** | Russell 2000                     | IWM (ETF)   | 러셀 2000 소형주 지수  |
+| **RUSsell2000** | Russell 2000                     | IWM (ETF)   | 러셀 2000 소형주 지수  |
 | **PHLX_SOX**    | Philadelphia Semiconductor Index | SOXX (ETF)  | 필라델피아 반도체 지수 |
 
 ### 🇪🇺 유럽 주요 지수 (`?region=EU`)
@@ -296,13 +296,13 @@ curl http://localhost:8000/api/v1/economic/inflation
 
 1. [FRED API 키 발급](https://fred.stlouisfed.org/docs/api/api_key.html)
 2. `.env` 파일에 추가:
-   ```env
-   FRED_API_KEY=your_fred_api_key_here
-   ```
+    ```env
+    FRED_API_KEY=your_fred_api_key_here
+    ```
 3. Docker Compose 재시작:
-   ```bash
-   docker-compose restart backend
-   ```
+    ```bash
+    docker-compose restart backend
+    ```
 
 **Note**: API 키가 설정되지 않은 경우 실제와 유사한 Mock 데이터가 제공됩니다.
 
@@ -322,9 +322,9 @@ curl http://localhost:8000/api/v1/economic/inflation
 
 #### 🎯 스마트 업데이트 로직
 
-- **발표일 기반 갱신**: 각 지표의 실제 발표일에 맞춰 업데이트
-- **중복 요청 방지**: 마지막 업데이트 시간과 비교하여 불필요한 API 호출 차단
-- **백그라운드 처리**: 사용자 요청에 영향을 주지 않는 비동기 처리
+-   **발표일 기반 갱신**: 각 지표의 실제 발표일에 맞춰 업데이트
+-   **중복 요청 방지**: 마지막 업데이트 시간과 비교하여 불필요한 API 호출 차단
+-   **백그라운드 처리**: 사용자 요청에 영향을 주지 않는 비동기 처리
 
 #### 📊 스케줄러 API 엔드포인트
 
@@ -351,9 +351,9 @@ GET /api/v1/scheduler/health
 
 스케줄러는 업데이트된 데이터를 다음 테이블에 저장합니다:
 
-- `economic_indicators`: 실제 지표 데이터 (타임시리즈)
-- `indicator_update_logs`: 업데이트 로그 및 성공/실패 기록
-- `data_quality_checks`: 데이터 품질 검증 결과
+-   `economic_indicators`: 실제 지표 데이터 (타임시리즈)
+-   `indicator_update_logs`: 업데이트 로그 및 성공/실패 기록
+-   `data_quality_checks`: 데이터 품질 검증 결과
 
 #### 🔧 사용 예시
 
@@ -398,11 +398,11 @@ docker-compose exec backend pytest app/tests/test_market_data_service.py -v
 
 ### SOLID 원칙 적용
 
-- **S (Single Responsibility)**: 각 클래스는 단일 책임
-- **O (Open/Closed)**: 확장에는 열려있고 수정에는 닫혀있음
-- **L (Liskov Substitution)**: 하위 타입은 상위 타입 대체 가능
-- **I (Interface Segregation)**: 클라이언트별 최소 인터페이스
-- **D (Dependency Inversion)**: 추상화에 의존, 구체 클래스에 의존하지 않음
+-   **S (Single Responsibility)**: 각 클래스는 단일 책임
+-   **O (Open/Closed)**: 확장에는 열려있고 수정에는 닫혀있음
+-   **L (Liskov Substitution)**: 하위 타입은 상위 타입 대체 가능
+-   **I (Interface Segregation)**: 클라이언트별 최소 인터페이스
+-   **D (Dependency Inversion)**: 추상화에 의존, 구체 클래스에 의존하지 않음
 
 ### 폴더 구조
 
@@ -442,28 +442,28 @@ docker-compose exec backend flake8
 
 1. **테스트 작성** (TDD)
 
-   ```python
-   def test_should_do_something_when_condition():
-       # Given
-       # When
-       # Then
-   ```
+    ```python
+    def test_should_do_something_when_condition():
+        # Given
+        # When
+        # Then
+    ```
 
 2. **인터페이스 정의** (DIP)
 
-   ```python
-   class DataProvider(ABC):
-       @abstractmethod
-       async def get_data(self) -> Dict:
-           pass
-   ```
+    ```python
+    class DataProvider(ABC):
+        @abstractmethod
+        async def get_data(self) -> Dict:
+            pass
+    ```
 
 3. **구현 클래스 작성** (SRP)
-   ```python
-   class ConcreteProvider(DataProvider):
-       async def get_data(self) -> Dict:
-           # 구현
-   ```
+    ```python
+    class ConcreteProvider(DataProvider):
+        async def get_data(self) -> Dict:
+            # 구현
+    ```
 
 ### 데이터베이스 마이그레이션
 
@@ -525,22 +525,22 @@ docker-compose -f docker-compose.prod.yml up
 
 ### Phase 1 (현재)
 
-- ✅ FastAPI 백엔드 구축
-- ✅ 시장 지수 데이터 API
-- ✅ Docker 개발 환경
+-   ✅ FastAPI 백엔드 구축
+-   ✅ 시장 지수 데이터 API
+-   ✅ Docker 개발 환경
 
 ### Phase 2 (진행 예정)
 
-- 🔄 React 프론트엔드 개발
-- 🔄 실시간 데이터 WebSocket
-- 🔄 사용자 인증 시스템
+-   🔄 React 프론트엔드 개발
+-   🔄 실시간 데이터 WebSocket
+-   🔄 사용자 인증 시스템
 
 ### Phase 3 (계획)
 
-- 📋 AI 기반 시장 분석
-- 📋 Stripe 결제 시스템
-- 📋 프리미엄 구독 기능
-- 📋 알림 서비스
+-   📋 AI 기반 시장 분석
+-   📋 Stripe 결제 시스템
+-   📋 프리미엄 구독 기능
+-   📋 알림 서비스
 
 ## 🤝 기여하기
 
@@ -552,10 +552,10 @@ docker-compose -f docker-compose.prod.yml up
 
 ### 기여 가이드라인
 
-- **TDD** 원칙 준수
-- **SOLID** 원칙 적용
-- **코드 커버리지 80%** 이상 유지
-- **Conventional Commits** 사용
+-   **TDD** 원칙 준수
+-   **SOLID** 원칙 적용
+-   **코드 커버리지 80%** 이상 유지
+-   **Conventional Commits** 사용
 
 ## 📝 라이선스
 
@@ -563,8 +563,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 문의
 
-- **이슈**: GitHub Issues
-- **이메일**: your-email@example.com
+-   **이슈**: GitHub Issues
+-   **이메일**: your-email@example.com
 
 ---
 

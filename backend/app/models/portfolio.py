@@ -16,10 +16,10 @@ from app.core.database import Base
 
 
 class TransactionType(enum.Enum):
-    BUY = "BUY"
-    SELL = "SELL"
-    DIVIDEND = "DIVIDEND"
-    SPLIT = "SPLIT"
+    buy = "buy"
+    sell = "sell"
+    dividend = "dividend"
+    split = "split"
 
 
 class DividendReinvestmentStrategy(enum.Enum):

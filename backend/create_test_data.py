@@ -39,7 +39,7 @@ def create_test_data():
             Transaction(
                 portfolio_id=1,
                 symbol="AAPL",
-                transaction_type=TransactionType.BUY,
+                transaction_type=TransactionType.buy,
                 quantity=10,
                 price=150.0,
                 total_amount=1505.0,  # quantity * price + fees
@@ -50,7 +50,7 @@ def create_test_data():
             Transaction(
                 portfolio_id=1,
                 symbol="MSFT",
-                transaction_type=TransactionType.BUY,
+                transaction_type=TransactionType.buy,
                 quantity=5,
                 price=300.0,
                 total_amount=1505.0,  # quantity * price + fees
@@ -61,7 +61,7 @@ def create_test_data():
             Transaction(
                 portfolio_id=1,
                 symbol="GOOGL",
-                transaction_type=TransactionType.BUY,
+                transaction_type=TransactionType.buy,
                 quantity=3,
                 price=120.0,
                 total_amount=365.0,  # quantity * price + fees

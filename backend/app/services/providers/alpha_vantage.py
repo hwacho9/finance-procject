@@ -20,7 +20,7 @@ class AlphaVantageProvider(MarketDataProvider):
         "DJIA": "DIA",  # SPDR Dow Jones Industrial Average ETF
         "SP500": "SPY",  # SPDR S&P 500 ETF Trust
         "NASDAQ": "QQQ",  # Invesco QQQ Trust (NASDAQ-100)
-        "RUSSELL2000": "IWM",  # iShares Russell 2000 ETF
+        "RUSsell2000": "IWM",  # iShares Russell 2000 ETF
         "PHLX_SOX": "SOXX",  # iShares Semiconductor ETF
         # Volatility
         "VIX": "VXX",  # iPath S&P 500 VIX Short-Term Futures ETN
@@ -60,7 +60,7 @@ class AlphaVantageProvider(MarketDataProvider):
         try:
             # Select symbols based on region
             if region == "US":
-                symbols = ["DJIA", "SP500", "NASDAQ", "RUSSELL2000", "PHLX_SOX"]
+                symbols = ["DJIA", "SP500", "NASDAQ", "RUSsell2000", "PHLX_SOX"]
             elif region == "EU":
                 symbols = ["EURO_STOXX50", "FTSE100", "DAX"]
             elif region == "ASIA":

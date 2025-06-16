@@ -31,7 +31,9 @@ from app.schemas.portfolio import (
     DividendDataPoint,
     AssetAllocation,
 )
-from app.services.market_data_service import market_data_service
+
+# TODO: Re-enable when market_data_service is properly implemented
+# from app.services.market_data_service import market_data_service
 
 
 class PortfolioService:
@@ -124,27 +126,49 @@ class PortfolioService:
             transaction_data.quantity * transaction_data.price + transaction_data.fees
         )
 
-        # Create transaction
+        print(
+            f"DEBUG: Adding transaction: type={transaction_data.transaction_type}, symbol={transaction_data.symbol}"
+        )
+        print(
+            f"DEBUG: Checking if {transaction_data.transaction_type} in [{TransactionType.buy}, {TransactionType.sell}]"
+        )
+
+        # Get or create holding first
+        holding_id = None
+        if transaction_data.transaction_type in [
+            TransactionType.buy,
+            TransactionType.sell,
+        ]:
+            print(f"DEBUG: Calling _update_holding...")
+            holding_id = self._update_holding(portfolio_id, transaction_data)
+            print(f"DEBUG: Got holding_id={holding_id}")
+        else:
+            print(
+                f"DEBUG: Skipping _update_holding for transaction type: {transaction_data.transaction_type}"
+            )
+
+        # Create transaction with holding_id
         db_transaction = Transaction(
             portfolio_id=portfolio_id,
+            holding_id=holding_id,
             total_amount=total_amount,
             **transaction_data.dict(),
         )
         self.db.add(db_transaction)
 
-        # Update or create holding
-        if transaction_data.transaction_type in [
-            TransactionType.BUY,
-            TransactionType.SELL,
-        ]:
-            self._update_holding(portfolio_id, transaction_data)
-
         self.db.commit()
         self.db.refresh(db_transaction)
+        print(f"DEBUG: Created transaction with holding_id={db_transaction.holding_id}")
         return db_transaction
 
-    def _update_holding(self, portfolio_id: int, transaction_data: TransactionCreate):
-        """Update holding based on transaction"""
+    def _update_holding(
+        self, portfolio_id: int, transaction_data: TransactionCreate
+    ) -> Optional[int]:
+        """Update holding based on transaction and return holding ID"""
+        print(
+            f"DEBUG: _update_holding called for portfolio_id={portfolio_id}, symbol={transaction_data.symbol}"
+        )
+
         holding = (
             self.db.query(Holding)
             .filter(
@@ -156,8 +180,11 @@ class PortfolioService:
             .first()
         )
 
-        if transaction_data.transaction_type == TransactionType.BUY:
+        print(f"DEBUG: Found existing holding: {holding is not None}")
+
+        if transaction_data.transaction_type == TransactionType.buy:
             if holding:
+                print(f"DEBUG: Updating existing holding with id={holding.id}")
                 # Update average cost using weighted average
                 total_cost = (holding.quantity * holding.average_cost) + (
                     transaction_data.quantity * transaction_data.price
@@ -168,24 +195,30 @@ class PortfolioService:
                 )
                 holding.quantity = new_quantity
             else:
-                # Get company info for new holding
-                company_info = market_data_service.get_company_info(
-                    transaction_data.symbol
+                print(
+                    f"DEBUG: Creating new holding for symbol={transaction_data.symbol}"
                 )
-
-                # Create new holding
+                # Create new holding without external API call for now
                 holding = Holding(
                     portfolio_id=portfolio_id,
                     symbol=transaction_data.symbol,
                     quantity=transaction_data.quantity,
                     average_cost=transaction_data.price,
-                    company_name=company_info.get("name"),
-                    sector=company_info.get("sector"),
+                    company_name=transaction_data.symbol,  # Use symbol as fallback
+                    sector="Unknown",  # Default sector
                 )
                 self.db.add(holding)
+                # Flush to get the ID without committing
+                self.db.flush()
+                print(f"DEBUG: Created new holding with id={holding.id}")
 
-        elif transaction_data.transaction_type == TransactionType.SELL and holding:
+        elif transaction_data.transaction_type == TransactionType.sell and holding:
+            print(f"DEBUG: Selling from holding with id={holding.id}")
             holding.quantity = max(0, holding.quantity - transaction_data.quantity)
+
+        result_id = holding.id if holding else None
+        print(f"DEBUG: Returning holding_id={result_id}")
+        return result_id
 
     # Portfolio Analysis Methods
     def get_portfolio_summary(
@@ -430,9 +463,7 @@ class PortfolioService:
 
         for holding in holdings:
             if holding.quantity > 0:
-                current_price = self._get_current_price(
-                    holding.symbol
-                )  # External API call
+                current_price = self._get_current_price(holding.symbol)
                 value = holding.quantity * current_price
                 percentage = (value / total_value * 100) if total_value > 0 else 0
 
@@ -442,9 +473,7 @@ class PortfolioService:
                     sector=holding.sector or "Unknown",
                     value=value,
                     percentage=percentage,
-                    dividend_yield=self._get_dividend_yield(
-                        holding.symbol
-                    ),  # External API call
+                    dividend_yield=self._get_dividend_yield(holding.symbol),
                 )
                 allocations.append(allocation)
 
@@ -466,7 +495,7 @@ class PortfolioService:
             .filter(
                 and_(
                     Transaction.portfolio_id == portfolio_id,
-                    Transaction.transaction_type == TransactionType.BUY,
+                    Transaction.transaction_type == TransactionType.buy,
                 )
             )
             .all()
@@ -477,7 +506,7 @@ class PortfolioService:
             .filter(
                 and_(
                     Transaction.portfolio_id == portfolio_id,
-                    Transaction.transaction_type == TransactionType.SELL,
+                    Transaction.transaction_type == TransactionType.sell,
                 )
             )
             .all()
@@ -566,12 +595,32 @@ class PortfolioService:
         )
 
     def _get_current_price(self, symbol: str) -> float:
-        """Get current price for symbol using market data service"""
-        return market_data_service.get_current_price(symbol)
+        """Get current price for symbol - placeholder implementation"""
+        # TODO: Implement proper market data service integration
+        # For now, return a reasonable mock price based on symbol
+        mock_prices = {
+            "AAPL": 150.0,
+            "GOOGL": 120.0,
+            "MSFT": 300.0,
+            "TSLA": 200.0,
+            "NVDA": 400.0,
+            "AMZN": 140.0,
+        }
+        return mock_prices.get(symbol, 100.0)  # Default price if symbol not found
 
     def _get_dividend_yield(self, symbol: str) -> Optional[float]:
-        """Get dividend yield for symbol using market data service"""
-        return market_data_service.get_dividend_yield(symbol)
+        """Get dividend yield for symbol - placeholder implementation"""
+        # TODO: Implement proper market data service integration
+        # For now, return a reasonable mock dividend yield
+        mock_yields = {
+            "AAPL": 0.5,
+            "GOOGL": 0.0,
+            "MSFT": 0.7,
+            "TSLA": 0.0,
+            "NVDA": 0.1,
+            "AMZN": 0.0,
+        }
+        return mock_yields.get(symbol, 0.2)  # Default 0.2% yield
 
     # Chart Data Generation
     def get_portfolio_value_chart(

@@ -344,18 +344,18 @@ export default function PortfolioManagementPage() {
                                                         <span
                                                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                                 transaction.transaction_type ===
-                                                                TransactionType.BUY
+                                                                TransactionType.buy
                                                                     ? "bg-green-100 text-green-800"
                                                                     : transaction.transaction_type ===
-                                                                      TransactionType.SELL
+                                                                      TransactionType.sell
                                                                     ? "bg-red-100 text-red-800"
                                                                     : "bg-blue-100 text-blue-800"
                                                             }`}>
                                                             {transaction.transaction_type ===
-                                                            TransactionType.BUY
+                                                            TransactionType.buy
                                                                 ? "매수"
                                                                 : transaction.transaction_type ===
-                                                                  TransactionType.SELL
+                                                                  TransactionType.sell
                                                                 ? "매도"
                                                                 : "배당"}
                                                         </span>

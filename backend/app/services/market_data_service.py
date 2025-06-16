@@ -332,7 +332,7 @@ class MarketDataService:
         asia_data = {}
 
         for symbol, data in raw_data.items():
-            if symbol in ["DJIA", "SP500", "NASDAQ", "RUSSELL2000", "PHLX_SOX"]:
+            if symbol in ["DJIA", "SP500", "NASDAQ", "RUSsell2000", "PHLX_SOX"]:
                 us_data[symbol] = data
             elif symbol in ["EURO_STOXX50", "FTSE100", "DAX", "CAC40", "IBEX35"]:
                 eu_data[symbol] = data
@@ -369,7 +369,7 @@ class MarketDataService:
             djia=self._build_market_index(data.get("DJIA", {})),
             sp500=self._build_market_index(data.get("SP500", {})),
             nasdaq=self._build_market_index(data.get("NASDAQ", {})),
-            russell2000=self._build_market_index(data.get("RUSSELL2000", {})),
+            russell2000=self._build_market_index(data.get("RUSsell2000", {})),
             phlx_sox=(
                 self._build_market_index(data.get("PHLX_SOX"))
                 if "PHLX_SOX" in data

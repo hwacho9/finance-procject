@@ -24,10 +24,10 @@ export interface PortfolioUpdate {
 }
 
 export enum TransactionType {
-    BUY = "buy",
-    SELL = "sell",
-    DIVIDEND = "dividend",
-    SPLIT = "split",
+    buy = "buy",
+    sell = "sell",
+    dividend = "dividend",
+    split = "split",
 }
 
 export enum DividendReinvestmentStrategy {

@@ -1,19 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
 
-
-class TransactionType(str, Enum):
-    BUY = "buy"
-    SELL = "sell"
-    DIVIDEND = "dividend"
-    SPLIT = "split"
-
-
-class DividendReinvestmentStrategy(str, Enum):
-    REINVEST = "reinvest"
-    CASH = "cash"
+# Import TransactionType and DividendReinvestmentStrategy from models
+from app.models.portfolio import TransactionType, DividendReinvestmentStrategy
 
 
 # Portfolio Schemas
@@ -56,6 +47,23 @@ class TransactionBase(BaseModel):
     dividend_per_share: Optional[float] = Field(None, ge=0)
     transaction_date: datetime
     notes: Optional[str] = None
+
+    @validator("transaction_date", pre=True)
+    def parse_transaction_date(cls, value):
+        if isinstance(value, str):
+            # Handle both date format (YYYY-MM-DD) and datetime format
+            try:
+                if "T" in value:
+                    # ISO datetime format
+                    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+                else:
+                    # Date format - assume start of day
+                    return datetime.strptime(value, "%Y-%m-%d")
+            except ValueError:
+                raise ValueError(
+                    "Invalid date format. Use YYYY-MM-DD or ISO datetime format"
+                )
+        return value
 
 
 class TransactionCreate(TransactionBase):

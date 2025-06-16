@@ -56,7 +56,7 @@ async def test_specific_indices(
     # Test symbols as requested by user
     test_symbols = {
         "volatility": ["VIX", "VXN", "VSTOXX", "VKOSPI"],
-        "us_indices": ["DJIA", "SP500", "NASDAQ", "RUSSELL2000", "PHLX_SOX"],
+        "us_indices": ["DJIA", "SP500", "NASDAQ", "RUSsell2000", "PHLX_SOX"],
         "japan": ["NIKKEI225", "TOPIX"],
         "korea": ["KOSPI", "KOSDAQ"],
         "hong_kong": ["HANG_SENG"],

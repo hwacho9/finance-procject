@@ -22,7 +22,7 @@ class YahooFinanceProvider(MarketDataProvider):
         "DJIA": "^DJI",
         "SP500": "^GSPC",
         "NASDAQ": "^IXIC",
-        "RUSSELL2000": "^RUT",
+        "RUSsell2000": "^RUT",
         "PHLX_SOX": "^SOX",
         # European Indices
         "EURO_STOXX50": "^STOXX50E",
@@ -71,7 +71,7 @@ class YahooFinanceProvider(MarketDataProvider):
         try:
             # Select symbols based on region
             if region == "US":
-                symbols = ["DJIA", "SP500", "NASDAQ", "RUSSELL2000", "PHLX_SOX"]
+                symbols = ["DJIA", "SP500", "NASDAQ", "RUSsell2000", "PHLX_SOX"]
             elif region == "EU":
                 symbols = ["EURO_STOXX50", "FTSE100", "DAX", "CAC40", "IBEX35"]
             elif region == "ASIA":

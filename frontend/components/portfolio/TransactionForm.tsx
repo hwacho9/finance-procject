@@ -18,9 +18,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 }) => {
     const [formData, setFormData] = useState<TransactionCreate>({
         symbol: "",
-        transaction_type: TransactionType.BUY,
-        quantity: 0,
-        price: 0,
+        transaction_type: TransactionType.buy,
+        quantity: 1,
+        price: 1,
         transaction_date: new Date().toISOString().split("T")[0],
         fees: 0,
         notes: "",
@@ -37,14 +37,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         }
         try {
             setSubmitLoading(true);
+
+            // Send form data directly - backend will handle date parsing
             await onSubmit(formData);
 
             // Reset form
             setFormData({
                 symbol: "",
-                transaction_type: TransactionType.BUY,
-                quantity: 0,
-                price: 0,
+                transaction_type: TransactionType.buy,
+                quantity: 1,
+                price: 1,
                 transaction_date: new Date().toISOString().split("T")[0],
                 fees: 0,
                 notes: "",
@@ -130,15 +132,15 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                             }
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={submitLoading}>
-                            <option value={TransactionType.BUY}>매수</option>
-                            <option value={TransactionType.SELL}>매도</option>
-                            <option value={TransactionType.DIVIDEND}>
+                            <option value={TransactionType.buy}>매수</option>
+                            <option value={TransactionType.sell}>매도</option>
+                            <option value={TransactionType.dividend}>
                                 배당
                             </option>
                         </select>
                     </div>
 
-                    {formData.transaction_type !== TransactionType.DIVIDEND ? (
+                    {formData.transaction_type !== TransactionType.dividend ? (
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -156,9 +158,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                                     }
                                     required={
                                         formData.transaction_type ===
-                                            TransactionType.BUY ||
+                                            TransactionType.buy ||
                                         formData.transaction_type ===
-                                            TransactionType.SELL
+                                            TransactionType.sell
                                     }
                                     disabled={submitLoading}
                                 />
@@ -180,9 +182,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                                     }
                                     required={
                                         formData.transaction_type ===
-                                            TransactionType.BUY ||
+                                            TransactionType.buy ||
                                         formData.transaction_type ===
-                                            TransactionType.SELL
+                                            TransactionType.sell
                                     }
                                     disabled={submitLoading}
                                 />
