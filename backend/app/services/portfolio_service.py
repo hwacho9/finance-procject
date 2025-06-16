@@ -31,6 +31,12 @@ from app.schemas.portfolio import (
     DividendDataPoint,
     AssetAllocation,
 )
+from app.repositories.portfolio_repository import (
+    PortfolioRepository,
+    HoldingRepository,
+    TransactionRepository,
+    DividendPaymentRepository,
+)
 
 # TODO: Re-enable when market_data_service is properly implemented
 # from app.services.market_data_service import market_data_service
@@ -39,6 +45,10 @@ from app.schemas.portfolio import (
 class PortfolioService:
     def __init__(self, db: Session):
         self.db = db
+        self.portfolio_repo = PortfolioRepository(db)
+        self.holding_repo = HoldingRepository(db)
+        self.transaction_repo = TransactionRepository(db)
+        self.dividend_repo = DividendPaymentRepository(db)
 
     # Portfolio CRUD Operations
     def create_portfolio(
@@ -50,29 +60,23 @@ class PortfolioService:
             portfolio_data.dividend_strategy.value
         )
 
-        db_portfolio = Portfolio(
+        portfolio_data_dict = portfolio_data.dict()
+        portfolio_data_dict["dividend_strategy"] = strategy_enum_member
+
+        # Use repository to create portfolio
+        return self.portfolio_repo.create(
+            obj_in=portfolio_data,
             user_id=user_id,
-            name=portfolio_data.name,
-            description=portfolio_data.description,
-            base_currency=portfolio_data.base_currency,
             dividend_strategy=strategy_enum_member,
         )
-        self.db.add(db_portfolio)
-        self.db.commit()
-        self.db.refresh(db_portfolio)
-        return db_portfolio
 
     def get_portfolios(self, user_id: str) -> List[Portfolio]:
         """Get all portfolios for a user"""
-        return self.db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
+        return self.portfolio_repo.get_by_user(user_id)
 
     def get_portfolio(self, portfolio_id: int, user_id: str) -> Optional[Portfolio]:
         """Get a specific portfolio"""
-        return (
-            self.db.query(Portfolio)
-            .filter(and_(Portfolio.id == portfolio_id, Portfolio.user_id == user_id))
-            .first()
-        )
+        return self.portfolio_repo.get_by_user_and_id(user_id, portfolio_id)
 
     def update_portfolio(
         self, portfolio_id: int, user_id: str, update_data: PortfolioUpdate
@@ -82,12 +86,7 @@ class PortfolioService:
         if not portfolio:
             return None
 
-        for field, value in update_data.dict(exclude_unset=True).items():
-            setattr(portfolio, field, value)
-
-        self.db.commit()
-        self.db.refresh(portfolio)
-        return portfolio
+        return self.portfolio_repo.update(db_obj=portfolio, obj_in=update_data)
 
     def delete_portfolio(self, portfolio_id: int, user_id: str) -> bool:
         """Delete a portfolio"""
@@ -95,9 +94,7 @@ class PortfolioService:
         if not portfolio:
             return False
 
-        self.db.delete(portfolio)
-        self.db.commit()
-        return True
+        return self.portfolio_repo.delete(id=portfolio_id)
 
     # Transaction Operations
     def get_transactions(self, portfolio_id: int, user_id: str) -> List[Transaction]:
@@ -106,12 +103,7 @@ class PortfolioService:
         if not portfolio:
             return []
 
-        return (
-            self.db.query(Transaction)
-            .filter(Transaction.portfolio_id == portfolio_id)
-            .order_by(Transaction.transaction_date.desc())
-            .all()
-        )
+        return self.transaction_repo.get_by_portfolio(portfolio_id)
 
     def add_transaction(
         self, portfolio_id: int, user_id: str, transaction_data: TransactionCreate
@@ -147,17 +139,17 @@ class PortfolioService:
                 f"DEBUG: Skipping _update_holding for transaction type: {transaction_data.transaction_type}"
             )
 
-        # Create transaction with holding_id
-        db_transaction = Transaction(
-            portfolio_id=portfolio_id,
-            holding_id=holding_id,
-            total_amount=total_amount,
-            **transaction_data.dict(),
+        # Create transaction with holding_id using repository
+        transaction_dict = transaction_data.dict()
+        transaction_dict.update(
+            {
+                "portfolio_id": portfolio_id,
+                "holding_id": holding_id,
+                "total_amount": total_amount,
+            }
         )
-        self.db.add(db_transaction)
 
-        self.db.commit()
-        self.db.refresh(db_transaction)
+        db_transaction = self.transaction_repo.create_transaction(transaction_dict)
         print(f"DEBUG: Created transaction with holding_id={db_transaction.holding_id}")
         return db_transaction
 
@@ -169,56 +161,17 @@ class PortfolioService:
             f"DEBUG: _update_holding called for portfolio_id={portfolio_id}, symbol={transaction_data.symbol}"
         )
 
-        holding = (
-            self.db.query(Holding)
-            .filter(
-                and_(
-                    Holding.portfolio_id == portfolio_id,
-                    Holding.symbol == transaction_data.symbol,
-                )
-            )
-            .first()
+        # Use repository to get or update holding
+        holding = self.holding_repo.create_or_update_holding(
+            portfolio_id=portfolio_id,
+            symbol=transaction_data.symbol,
+            quantity_change=transaction_data.quantity,
+            price=transaction_data.price,
+            transaction_type=transaction_data.transaction_type,
         )
 
-        print(f"DEBUG: Found existing holding: {holding is not None}")
-
-        if transaction_data.transaction_type == TransactionType.buy:
-            if holding:
-                print(f"DEBUG: Updating existing holding with id={holding.id}")
-                # Update average cost using weighted average
-                total_cost = (holding.quantity * holding.average_cost) + (
-                    transaction_data.quantity * transaction_data.price
-                )
-                new_quantity = holding.quantity + transaction_data.quantity
-                holding.average_cost = (
-                    total_cost / new_quantity if new_quantity > 0 else 0
-                )
-                holding.quantity = new_quantity
-            else:
-                print(
-                    f"DEBUG: Creating new holding for symbol={transaction_data.symbol}"
-                )
-                # Create new holding without external API call for now
-                holding = Holding(
-                    portfolio_id=portfolio_id,
-                    symbol=transaction_data.symbol,
-                    quantity=transaction_data.quantity,
-                    average_cost=transaction_data.price,
-                    company_name=transaction_data.symbol,  # Use symbol as fallback
-                    sector="Unknown",  # Default sector
-                )
-                self.db.add(holding)
-                # Flush to get the ID without committing
-                self.db.flush()
-                print(f"DEBUG: Created new holding with id={holding.id}")
-
-        elif transaction_data.transaction_type == TransactionType.sell and holding:
-            print(f"DEBUG: Selling from holding with id={holding.id}")
-            holding.quantity = max(0, holding.quantity - transaction_data.quantity)
-
-        result_id = holding.id if holding else None
-        print(f"DEBUG: Returning holding_id={result_id}")
-        return result_id
+        print(f"DEBUG: Updated/created holding with id={holding.id}")
+        return holding.id
 
     # Portfolio Analysis Methods
     def get_portfolio_summary(
@@ -229,16 +182,8 @@ class PortfolioService:
         if not portfolio:
             return None
 
-        holdings = (
-            self.db.query(Holding).filter(Holding.portfolio_id == portfolio_id).all()
-        )
-        transactions = (
-            self.db.query(Transaction)
-            .filter(Transaction.portfolio_id == portfolio_id)
-            .order_by(Transaction.transaction_date.desc())
-            .limit(10)
-            .all()
-        )
+        holdings = self.holding_repo.get_by_portfolio(portfolio_id)
+        transactions = self.transaction_repo.get_by_portfolio(portfolio_id, limit=10)
 
         # Calculate portfolio metrics
         total_invested = self._calculate_total_invested(portfolio_id)
@@ -279,6 +224,7 @@ class PortfolioService:
             end_date = datetime.now(timezone.utc)
 
         # Get portfolio snapshots or calculate historical values
+        # TODO: Create PortfolioSnapshotRepository
         snapshots = (
             self.db.query(PortfolioSnapshot)
             .filter(
@@ -369,12 +315,7 @@ class PortfolioService:
         if not portfolio:
             return None
 
-        dividends = (
-            self.db.query(DividendPayment)
-            .filter(DividendPayment.portfolio_id == portfolio_id)
-            .order_by(DividendPayment.payment_date)
-            .all()
-        )
+        dividends = self.dividend_repo.get_by_portfolio(portfolio_id)
 
         # Group dividends by month
         monthly_dividends = defaultdict(float)
@@ -453,9 +394,7 @@ class PortfolioService:
         if not portfolio:
             return None
 
-        holdings = (
-            self.db.query(Holding).filter(Holding.portfolio_id == portfolio_id).all()
-        )
+        holdings = self.holding_repo.get_by_portfolio(portfolio_id)
         total_value = self._calculate_current_portfolio_value(portfolio_id)
 
         allocations = []
@@ -490,56 +429,22 @@ class PortfolioService:
     # Helper Methods for Calculations
     def _calculate_total_invested(self, portfolio_id: int) -> float:
         """Calculate total amount invested"""
-        buy_transactions = (
-            self.db.query(Transaction)
-            .filter(
-                and_(
-                    Transaction.portfolio_id == portfolio_id,
-                    Transaction.transaction_type == TransactionType.buy,
-                )
-            )
-            .all()
-        )
-
-        sell_transactions = (
-            self.db.query(Transaction)
-            .filter(
-                and_(
-                    Transaction.portfolio_id == portfolio_id,
-                    Transaction.transaction_type == TransactionType.sell,
-                )
-            )
-            .all()
-        )
-
-        total_bought = sum(t.total_amount for t in buy_transactions)
-        total_sold = sum(t.total_amount for t in sell_transactions)
-
-        return total_bought - total_sold
+        return self.transaction_repo.calculate_total_invested(portfolio_id)
 
     def _calculate_current_portfolio_value(self, portfolio_id: int) -> float:
         """Calculate current portfolio value"""
-        holdings = (
-            self.db.query(Holding).filter(Holding.portfolio_id == portfolio_id).all()
-        )
+        holdings = self.holding_repo.get_active_holdings(portfolio_id)
         total_value = 0
 
         for holding in holdings:
-            if holding.quantity > 0:
-                current_price = self._get_current_price(holding.symbol)
-                total_value += holding.quantity * current_price
+            current_price = self._get_current_price(holding.symbol)
+            total_value += holding.quantity * current_price
 
         return total_value
 
     def _calculate_total_dividends(self, portfolio_id: int) -> float:
         """Calculate total dividends received"""
-        dividends = (
-            self.db.query(DividendPayment)
-            .filter(DividendPayment.portfolio_id == portfolio_id)
-            .all()
-        )
-
-        return sum(d.total_dividend for d in dividends)
+        return self.transaction_repo.calculate_total_dividends(portfolio_id)
 
     def _calculate_portfolio_value_at_date(
         self, portfolio_id: int, date: datetime

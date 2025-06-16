@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from typing import Optional
 from datetime import datetime
@@ -7,6 +6,7 @@ from datetime import datetime
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.auth import FirebaseUser
+from app.repositories.user_repository import UserRepository
 
 
 class UserService:
@@ -14,6 +14,7 @@ class UserService:
 
     def __init__(self, db: Session):
         self.db = db
+        self.user_repo = UserRepository(db)
 
     def create_user(self, user_data: UserCreate) -> User:
         """새로운 사용자 생성 및 기본 포트폴리오 생성"""
@@ -22,15 +23,7 @@ class UserService:
         from app.schemas.portfolio import PortfolioCreate
 
         try:
-            db_user = User(
-                uid=user_data.uid,
-                email=user_data.email,
-                name=user_data.name,
-                email_verified=user_data.email_verified,
-            )
-            self.db.add(db_user)
-            self.db.commit()
-            self.db.refresh(db_user)
+            db_user = self.user_repo.create(obj_in=user_data)
 
             # --- 기본 포트폴리오 생성 로직 ---
             portfolio_service = PortfolioService(self.db)
@@ -49,63 +42,42 @@ class UserService:
         except IntegrityError:
             self.db.rollback()
             # 이미 존재하는 사용자인 경우 기존 사용자 반환
-            existing_user = self.get_user_by_uid(user_data.uid)
+            existing_user = self.user_repo.get_by_uid(user_data.uid)
             if existing_user:
                 return existing_user
             raise
 
     def get_user_by_uid(self, uid: str) -> Optional[User]:
         """UID로 사용자 조회"""
-        return self.db.query(User).filter(User.uid == uid).first()
+        return self.user_repo.get_by_uid(uid)
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         """이메일로 사용자 조회"""
-        return self.db.query(User).filter(User.email == email).first()
+        return self.user_repo.get_by_email(email)
 
     def update_user(self, uid: str, user_data: UserUpdate) -> Optional[User]:
         """사용자 정보 업데이트"""
-        db_user = self.get_user_by_uid(uid)
+        db_user = self.user_repo.get_by_uid(uid)
         if not db_user:
             return None
 
-        update_data = user_data.dict(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(db_user, field, value)
-
-        db_user.updated_at = datetime.utcnow()
-        self.db.commit()
-        self.db.refresh(db_user)
-
-        return db_user
+        updated_user = self.user_repo.update(
+            db_obj=db_user, obj_in=user_data, updated_at=datetime.utcnow()
+        )
+        return updated_user
 
     def update_last_login(self, uid: str) -> Optional[User]:
         """마지막 로그인 시간 업데이트"""
-        db_user = self.get_user_by_uid(uid)
-        if not db_user:
-            return None
-
-        db_user.last_login_at = datetime.utcnow()
-        self.db.commit()
-        self.db.refresh(db_user)
-
-        return db_user
+        return self.user_repo.update_last_login(uid)
 
     def deactivate_user(self, uid: str) -> bool:
         """사용자 계정 비활성화"""
-        db_user = self.get_user_by_uid(uid)
-        if not db_user:
-            return False
-
-        db_user.is_active = False
-        db_user.updated_at = datetime.utcnow()
-        self.db.commit()
-
-        return True
+        return self.user_repo.deactivate_by_uid(uid)
 
     def get_or_create_user_from_firebase(self, firebase_user: FirebaseUser) -> User:
         """Firebase 유저 정보에서 사용자를 찾거나 생성"""
         # 기존 사용자 확인
-        existing_user = self.get_user_by_uid(firebase_user.uid)
+        existing_user = self.user_repo.get_by_uid(firebase_user.uid)
         if existing_user:
             # 마지막 로그인 시간 업데이트
             self.update_last_login(firebase_user.uid)
